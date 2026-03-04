@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Środowisko wirtualne
+env/
+venv/
+.env
+
+# Logi
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.spyproject/
+.idea/
+.vscode/
+
+# Modele (duże pliki binarne)
+*.pkl
+*.h5
+*.keras
+
+# OS
+.DS_Store
+Thumbs.db

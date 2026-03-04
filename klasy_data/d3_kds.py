@@ -60,12 +60,13 @@ class KdsSetup:
 
         # KluskiConfig ========================================================
         self.d2_kluski = KluskiConfig(
-                            self.d1_pds.df_for_keras, 
+                            self.d1_pds.df_for_keras,
                             self.d1_pds.qty_train, self.d1_pds.qty_val, self.d1_pds.qty_test,
                             self.d1_pds.lp_kolumny_flagi,
                             self.epochs, self.batchsize, self.seqlen,
                             self.d1_pds.data_prep_file,
                             self.testsetatlast,
+                            self.datacfg.output_steps,
                             )
         
 

@@ -38,9 +38,6 @@ from klasy_jesien.behav1_single import SingleBehavior
 from klasy_jesien.behav2_dual import DualBehavior
 from klasy_jesien.handler_dfres import DfResHandler
 
-from keras import mixed_precision
-
-
 def setup_logging():
     """Konfiguracja loggera"""
     logging.basicConfig(
@@ -70,8 +67,7 @@ def run_experiment(
     wyborkols,
     timestampplus,
     corobie,
-    hours_ahead=0,
-    
+
     # Parametry główne
     isdeep=False,
     isdual=False,

@@ -27,6 +27,8 @@ class DataConfig:
     sca_estymator: str = "MaxAbs"
     frac_val: float = 0.25
     frac_test: float = 0.25
+    scale: bool = True
+    output_steps: int = 1
 
     # Zakresy czasowe (WYMAGANE tylko dla mr)
     date_start: str = '2000-01-01 00:00:00'

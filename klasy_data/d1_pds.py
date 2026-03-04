@@ -36,11 +36,10 @@ class PdsSetup:
     UPROSZCZONE: Zamiast 10+ argumentów, przyjmuje tylko datacfg i parametry eksperymentu.
     """
 
-    def __init__(self, 
+    def __init__(self,
                  datacfg: DataConfig,
                  wybor_kols: str,
                  timestampplus: str,
-                 hours_ahead: int = 0,  # <-- NOWY PARAMETR; raczej bez sensu
                  sprkod: bool = False,
                  testsetatlast: bool = False):
         """
@@ -53,16 +52,15 @@ class PdsSetup:
         """
         self.wybor_kols = wybor_kols
         self.timestampplus = timestampplus
-        self.hours_ahead = int(hours_ahead)
         self.sprkod = sprkod
         self.testsetatlast = testsetatlast #### tutaj jest to tylko po to żeby dobrze nazwać podkatalog
-        
+
         # NIE: Rozpakuj konfigurację wszystkich używanych tutaj danych -- lepiej wiedzieć skąd się wzięły
-        
-        self.datacfg = datacfg 
+
+        self.datacfg = datacfg
         self.kol_flagA = self.datacfg.kol_flagA
         self.ts_processor = TimeSeriesProcessor()
-        self.subdirectory = (f"ha{self.hours_ahead}_{self.wybor_kols or 'all_kols'}"
+        self.subdirectory = (f"{self.wybor_kols or 'all_kols'}"
                             f"{'__SPR' if self.sprkod else ''}"
                             f"{'__testset' if self.testsetatlast else '__valset'}"
                             )
@@ -148,7 +146,7 @@ class PdsSetup:
         for col in self.datacfg.intkols_to_scale:
             try:
                 df[col] = df[col].astype("float64")
-            except:
+            except (KeyError, ValueError):
                 logger.warning(f"Nie udało się ufloacić kolumny {col}, a byla taka kolumna?\n")
         return df
     
@@ -157,63 +155,11 @@ class PdsSetup:
     
     
 
-    # def add_kol_target(self, df, df_virgin):
-    #     """Przygotowuje kolumnę target i usuwa t_casing z df."""
-    #     df['target'] = df[self.datacfg.kol_target]
-    #     df_virgin['target'] = df_virgin[self.datacfg.kol_target]
-    #     return df.drop(self.datacfg.kol_target, axis=1), df_virgin
-
-
-
     def add_kol_target(self, df, df_virgin):
-        """Przygotowuje kolumnę target - przesunięta do przodu wartość kol_target."""
-        
-        if self.hours_ahead > 0:
-            # Target to wartość z przyszłości
-            df['target'] = df[self.datacfg.kol_target].shift(-self.hours_ahead)
-            
-            df['virgin_target'] = df[self.datacfg.kol_target] ## virgin target będzie inputem
-            
-            # Usuń ostatnie self.hours_ahead wierszy (nie mają targetu)
-            df = df.iloc[:-self.hours_ahead]
-            # df_virgin = df_virgin.loc[df.index] # żeby dorównać indeks df_virgin do df zmienionej, ale ja tego nie chcę
-            
-            # WAŻNE: kol_target ZOSTAJE w df jako feature!
-            # NIE robimy: df.drop(self.datacfg.kol_target, axis=1)
-            
-        else:
-            # self.hours_ahead=0: przewidujemy obecną wartość (nie ma sensu, ale dla kompatybilności)
-            df['target'] = df[self.datacfg.kol_target]
-            df_virgin['target'] = df_virgin[self.datacfg.kol_target]
-            df = df.drop(self.datacfg.kol_target, axis=1)  # tutaj dropujemy bo target=teraźniejszość
-        
-        return df, df_virgin
-
-
-           
-    def shift_target_forward(self, df):
-        """
-        Przesuwa kolumnę target o self.hours_ahead godzin do przodu.
-        Czyli dla wiersza t, target będzie wartością z t+self.hours_ahead.
-        
-        Args:
-            df: DataFrame z kolumną 'target'
-            self.hours_ahead: o ile godzin przesunąć target do przodu
-        
-        Returns:
-            DataFrame z przesuniętym targetem (bez ostatnich self.hours_ahead wierszy)
-        """
-        logger.info(f"Przesuwam target o {self.hours_ahead} godzin do przodu")
-        
-        # Przesuń target do przodu
-        df['target'] = df['target'].shift(-self.hours_ahead)
-        
-        # Usuń ostatnie self.hours_ahead wierszy (nie mają targetu)
-        df = df.iloc[:-self.hours_ahead]
-        
-        logger.info(f"Po shift: {len(df)} wierszy (usunięto {self.hours_ahead} ostatnich)")
-        
-        return df
+        """Przygotowuje kolumnę target i usuwa kol_target z df."""
+        df['target'] = df[self.datacfg.kol_target]
+        df_virgin['target'] = df_virgin[self.datacfg.kol_target]
+        return df.drop(self.datacfg.kol_target, axis=1), df_virgin
 
 
 
@@ -406,7 +352,10 @@ class PdsSetup:
 
 
             # Skalowanie danych ---- musi być zrobione na danych rozdzielonych na train i pozostałe
-            scaler_X = self.main2_scale_pandas_sets_in_place(X_train, X_val, X_test)
+            if self.datacfg.scale:
+                scaler_X = self.main2_scale_pandas_sets_in_place(X_train, X_val, X_test)
+            else:
+                scaler_X = None
             
            
             # Konstruowanie df_for_keras ---- to nie jest taka sama dataframe jak df, bo ta jest zeskalowana
@@ -424,24 +373,12 @@ class PdsSetup:
             # round jesli to jest test kodu, albo nawet jak nie jest #### WROC -- Claude powiedział że tak będzie ok
             # if self.sprkod:
             # print("\n\nwszystkie dfy do returna round do trzech miejsc po przecinku i zrób z nich float16") # CHYBA NIE MA CO
-            for df in (df_for_keras,   X_train,   X_val,   X_test, 
-                                       y_train,   y_val,   y_test):
-
-                # PLAN, ALE PRZEMYŚL:
-                # df = df.round(5)
-                # print(df.head(2))
-                
-                # print("\nprzed round:\n", df.head(2))
-                for col in df.columns:
-                    # print(f"{col} jest typu {df[col].dtype}")
-                    #### nauka: W Pythonie:
-                    # float (bez numeru) to alias dla float64
-                    # df[col].dtype == float sprawdza tylko czy to dokładnie float64
-                    # if df[col].dtype == float: <-- Nie złapie float32, float16 itd.
-                    # POPRAWIONE: sprawdź czy to JAKIKOLWIEK typ float
-                    if df[col].dtype.kind == 'f':  # 'f' oznacza floating point
-                        df[col] = df[col].round(3)
-                print("po round:\n", df.head(2))
+            for _frame in (df_for_keras,   X_train,   X_val,   X_test,
+                                           y_train,   y_val,   y_test):
+                for col in _frame.columns:
+                    if _frame[col].dtype.kind == 'f':  # 'f' oznacza floating point
+                        _frame[col] = _frame[col].round(3)
+                print("po round:\n", _frame.head(2))
 
 
 
@@ -562,116 +499,6 @@ class PdsSetup:
 
     
     @staticmethod
-    def _plot_sensor_data(df, chunk_size, mojerys_path, scaled=False): ####### COS TO SIE POPSULO
-        """zostawiam mojerys_path zeby byla mozliwosc zapisac obrazek w podkatalogu tego katalogu"""
-        # Parameters
-        chunk_size = chunk_size 
-        num_chunks = (len(df) // chunk_size) + (1 if len(df) % chunk_size != 0 else 0)
-        print(f"num_chunks = {num_chunks}")
-        
-        # Create plots
-        for i in range(num_chunks):
-            # Determine the slice of the DataFrame to plot
-            start_idx = i * chunk_size
-            end_idx = start_idx + chunk_size
-            df_chunk = df.iloc[ start_idx : end_idx ]
-        
-            print(start_idx, end_idx, df_chunk.index[0])
-        
-            # Create plot
-            plt.figure(figsize=(13, 10)) ########### DO WORDA: 13, 10
-            plt.plot(df_chunk.index, df_chunk['power'], label='power [MW]', color="grey", alpha=0.4, linewidth=5)
-    
-            plt.plot(df_chunk.index, df_chunk['t_casing'], label='t of IP casing (target) [°C]', color='darkorange', linewidth=0.2, marker='o', markersize=.7)    
-            ############## unhold !
-            plt.plot(df_chunk.index, df_chunk['t_blade'], label='t of blade [°C]', alpha=0.6, color='navy')
-            plt.plot(df_chunk.index, df_chunk['t_LP_steam'], label='t of steam at IP stage outlet [°C]', color='royalblue')
-            
-            
-            # plt.plot(df_chunk.index, df_chunk["t_casing_cooling_limit"]*100, label='t target cooling limit [°C/min]', color='red') #, alpha=0.4, linewidth=1)         
-            # plt.plot(df_chunk.index, df_chunk["t_casing_heating_limit"]*100, label='t target heating limit [°C/min]', color='red') #
-    
-            
-    
-            GRUBOSC = 500 # 2 dni to 500, caly miesiac to 1
-    
-            # diff z bar plots:
-    # =============================================================================
-    #         plt.bar(df_chunk.index, df_chunk['t_casing_diff']*100, label='t diff of IP casing (target) [°C]', 
-    #                 color='c', alpha=0.4, width=0.005*GRUBOSC, align='center')
-    # =============================================================================
-    
-            plt.bar(df_chunk.index, df_chunk['startup_20']*100, label='startup window', 
-                    color='c', alpha=0.4, width=0.005*GRUBOSC, align='center')
-    
-            plt.bar(df_chunk.index, df_chunk["startup_start"]*500, label="startup start", 
-                    color='black', alpha=0.9, width=0.008*GRUBOSC, align='center') 
-    
-            plt.bar(df_chunk.index, df_chunk["RPM_diff_binned"], label="diff of RPM", 
-                    color='magenta', alpha=0.4, width=0.005*GRUBOSC, align='center') # 0.001
-            
-    
-    
-    # =============================================================================
-    #         if scaled==False:
-    #             # plt.plot(df_chunk.index, df_chunk['RPM']/10, label='RPM/10', color='darkorchid', linewidth=0.4, marker='o', markersize=.8, alpha=0.6, )        
-    # 
-    # # =============================================================================
-    # #             plt.plot(df_chunk.index, df_chunk['p_IP_sec-steam']*100, label='p of steam at IP stage inlet [dbar]', color='green')
-    # #             plt.plot(df_chunk.index, df_chunk['p_LP_steam_A']*100, label='p of steam at IP stage outlet [dbar]', color='limegreen')
-    # #             plt.plot(df_chunk.index, df_chunk['flow_IP_sec-steam']/10, label='flow of steam at IP stage [10 t/h]', color="black", alpha=0.9, linewidth=1)
-    # # =============================================================================
-    #         else:
-    #             pass
-    #             # teraz te wszystkie przemnozone waratosci odmnoz
-    # =============================================================================
-            
-            # Fill the area under the line with a translucent color --- WSZYSTKO SIE PSUJE :(
-        # =============================================================================
-        #     plt.fill_between(df_chunk['t_casing'], df_chunk['t_blade'], color='darkgreen', alpha=0.1)
-        #     plt.fill_between(df_chunk.index, df_chunk['diff_from_t_bl_roll_mean']*10, color='red', alpha=0.1)
-        # =============================================================================
-            
-            # Plot vertical lines for startup and shutdown statuses
-    # =============================================================================
-    #         for status, color in [('startup', 'chocolate'), ('shutdown', 'c')]:
-    #             status_indices = df_chunk.index[df_chunk['status'] == status]
-    #             for idx in status_indices:
-    #                 plt.axvline(x=idx, color=color, linewidth=0.1, alpha=0.2, linestyle=':', 
-    #                             label=status if status not in plt.gca().get_legend_handles_labels()[1] else "")
-    # =============================================================================
-        
-            # Setup plot aesthetics
-            plt.xlabel('Time')
-            plt.ylabel('Values')
-            plt.legend() # zamula
-     
-            # plt.grid(which='both')
-            plt.grid(which='both', linestyle='-', linewidth=.5) # color='r'
-            
-            # Set the y-axis limits       
-            plt.ylim(-200, 600)
-            if scaled==True:
-                plt.ylim(0, 1)            
-                
-            #*<
-            title = f'Sensor Data from {df_chunk.index[0]} to {df_chunk.index[-1]}'
-            plt.title(title); now = str(datetime.datetime.now())[:16].replace(":", "-")
-            path = mojerys_path / f"{now}__{title}.png" 
-            plt.tight_layout(); plt.savefig(path, dpi=100)
-            plt.close() # Close the plot to free up memory
-            #*>
-        
-        print("All plots have been generated and saved as separate files.")
-    
-    
-    
-    
-    
-    
-    
-    
-    @staticmethod
     def _plot_sensors_only(df, chunk_size, mojerys_path, num_chunks=None, scaled=False, add_info=""):
         """zostawiam mojerys_path zeby byla mozliwosc zapisac obrazek w podkatalogu tego katalogu"""
         
@@ -785,7 +612,7 @@ class PdsSetup:
             title = f'Sensor Data Chunk {i+1}' 
             title = f'Sensor Data' 
             
-            plt.title(title); now = str(datetime.datetime.now())[:16].replace(":", "-")
+            plt.title(title); now = str(datetime.now())[:16].replace(":", "-")
             path = mojerys_path / f"{now}__{add_info}__{title}.png" 
             plt.tight_layout(); plt.savefig(path, dpi=100)
             plt.close() # Close the plot to free up memory
@@ -797,76 +624,6 @@ class PdsSetup:
         
         
     
-    # dałam do tg54
-# =============================================================================
-#     @staticmethod
-#     def _plot_sensors_only_tg56(df, chunk_size, mojerys_path, num_chunks=None, scaled=False, add_info=""):
-#         """zostawiam mojerys_path zeby byla mozliwosc zapisac obrazek w podkatalogu tego katalogu"""
-#         
-#         # Parameters
-#         chunk_size = chunk_size
-#         if num_chunks is None:
-#             num_chunks = (len(df) // chunk_size) + (1 if len(df) % chunk_size != 0 else 0)
-#         print(f"num_chunks = {num_chunks}")
-#         
-#         # Create plots
-#         for i in range(num_chunks):
-#             # Determine the slice of the DataFrame to plot
-#             start_idx = i * chunk_size
-#             end_idx = start_idx + chunk_size
-#             df_chunk = df.iloc[ start_idx : end_idx ]
-#         
-#             print(start_idx, end_idx, df_chunk.index[0])
-#     
-#             # Create plot
-#             plt.figure(figsize=(30, 10)) ########### DO WORDA: 13, 10 pod komputer: 35, 20
-#             
-#             plt.plot(df_chunk.index, df_chunk['MW_moc'], label='moc [MW]', color="purple", alpha=0.8, linewidth=5)
-#             plt.plot(df_chunk.index, df_chunk['mm_rozpr1'], label='mm_rozpr1', color="maroon", alpha=0.3, linewidth=3)
-#             
-#             
-#             LIWI=.9 # linewidth
-#             MASI=1.5 # jak duzy plot albo do worda to 1
-# 
-#             plt.plot(df_chunk.index, df_chunk["t_NP_inlet"], label="t_NP_inlet [°C]",  color="crismon", alpha=0.3,  linewidth=LIWI, marker='o', markersize=MASI)
-#             plt.plot(df_chunk.index, df_chunk['t_NP10_outlet'], label='t_NP10_outlet [°C]', color='darkorange',  linewidth=LIWI, marker='o', markersize=MASI)
-#             plt.plot(df_chunk.index, df_chunk['t_NP20_outlet'], label='t_NP20_outlet', color='salmon', linewidth=LIWI, marker='o', markersize=MASI)        
-#             plt.plot(df_chunk.index, df_chunk['t_NP30_outlet'], label='t_NP30_outlet [°C]', color='orchid', linewidth=LIWI, marker='o', markersize=MASI)   
-# 
-#             plt.plot(df_chunk.index, df_chunk["t_parawtorna_11"], label="t_parawtorna_11 [°C]", color='red', linewidth=LIWI, marker='*', markersize=MASI)   
-#             plt.plot(df_chunk.index, df_chunk["t_parawtorna_12"], label="t_parawtorna_12 [°C]", color='red', linewidth=LIWI, marker='+', markersize=MASI)   
-#             
-#             plt.plot(df_chunk.index, df_chunk['t_FWH_3'], label='t_FWH_3 [°C]', color='c', linewidth=LIWI, marker='o', markersize=MASI)      
-#             plt.plot(df_chunk.index, df_chunk['t_FWH_4'], label='t_FWH_4 [°C]', color='deepskyblue', linewidth=LIWI, marker='o', markersize=MASI)        
-#          
-#             # Setup plot aesthetics
-#             plt.xlabel('Time')
-#             plt.ylabel('Values')
-#             plt.legend() # zamula
-#     
-#             # plt.grid(which='both')
-#             plt.grid(which='both', linestyle='-', linewidth=.5) # color='r'
-#     
-#             # Set the y-axis limits
-#             # plt.ylim(-50, 600)
-#                 
-#             #*<
-#             # title = f'Sensor Data: {add_info} Chunk {i+1}' #'from {df_chunk.index[0]} to {df_chunk.index[-1]}'
-#             
-#             title = f'Sensor Data Chunk {i+1}' 
-#             
-#             plt.title(title); now = str(datetime.now())[:16].replace(":", "-")
-#             path = mojerys_path / f"{now}__{add_info}__{title}.png" 
-#             plt.tight_layout(); plt.savefig(path, dpi=100)
-#             plt.close() # Close the plot to free up memory
-#             #*>
-#         
-#         print("All plots have been generated and saved as separate files.")
-# =============================================================================
-        
-        
-        
-        
     @staticmethod
     def _plot_cala_df(df, chunk_size, mojerys_path, info="", num_chunks=None):
         """zostawiam mojerys_path zeby byla mozliwosc zapisac obrazek w podkatalogu tego katalogu"""

@@ -88,7 +88,8 @@ class DeepArchitecture(BaseArchitecture):
         # Bo klasa bazowa już to zrobiła!
         
         self.d3_kds = kds_setup_instance
-        self.dm_type = dm_type        
+        self.dm_type = dm_type
+        self.output_steps = self.d3_kds.datacfg.output_steps
 
         self.timestampplus = self.d3_kds.timestampplus
         self.testsetatlast = self.d3_kds.testsetatlast
@@ -142,16 +143,19 @@ class DeepArchitecture(BaseArchitecture):
     def build(self, dmhps):
         """
         Buduje model deep learning.
-        
+
         Args:
-            config: Obiekt z parametrami (dmhps)
-            
+            dmhps: Obiekt z hiperparametrami modelu
         """
         if self.dm_type == 'lstm':
             self.model = self._build_zwykly_lstm(dmhps)
-        else:
+        elif self.dm_type == 'bigruta_seq2seq':
+            self.model = self._build_gru_attention(dmhps, output_steps=self.output_steps)
+        elif self.dm_type == 'enc_dec':
+            self.model = self._build_encoder_decoder(dmhps)
+        else:  # 'bigruta' (default)
             self.model = self._build_gru_attention(dmhps)
-        
+
         return self.model
     
     
@@ -187,12 +191,13 @@ class DeepArchitecture(BaseArchitecture):
     
     
     
-    def _build_gru_attention(self, dmhps):
-        """GRU + Attention - z oryginalnego define_and_compile_mdeep"""
-
+    def _build_gru_attention(self, dmhps, output_steps=1):
+        """GRU + Attention - z oryginalnego define_and_compile_mdeep.
+        output_steps=1: seq2one; output_steps>1: seq2seq Dense (bigruta_seq2seq)
+        """
         variant_gru, variant_ta, variant_ile_nodow = dmhps.warstwy
         pol_nodow = int(variant_ile_nodow / 2)
-        
+
         # ***************
         inputs = tf.keras.Input(shape=self.input_shape)
 
@@ -200,32 +205,32 @@ class DeepArchitecture(BaseArchitecture):
         if variant_gru == "1xGRU":
             x = tf.keras.layers.Bidirectional(
                 tf.keras.layers.GRU(
-                    variant_ile_nodow, 
+                    variant_ile_nodow,
                     return_sequences=True,
                     kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
                 )
             )(inputs)
-        
+
         elif variant_gru == "2xGRU":
             x = tf.keras.layers.Bidirectional(
                 tf.keras.layers.GRU(
-                    variant_ile_nodow, 
+                    variant_ile_nodow,
                     return_sequences=True,
                     kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
                 )
             )(inputs)
             x = tf.keras.layers.Bidirectional(
                 tf.keras.layers.GRU(
-                    pol_nodow, 
+                    pol_nodow,
                     return_sequences=True,
                     kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
                 )
             )(x)
         else:
             raise ValueError(f"Invalid variant_gru: {variant_gru}")
-        
+
         x = tf.keras.layers.Dropout(dmhps.dropout)(x)
-        
+
         # Warstwa Attention
         return_seq = False
         if variant_ta == "simple_TA":
@@ -236,25 +241,64 @@ class DeepArchitecture(BaseArchitecture):
             x = LongDirectionalTimeAttention(return_sequences=return_seq)(x)
         else:
             raise ValueError(f"Invalid variant_ta: {variant_ta}")
-        
+
         # ***************
         outputs = tf.keras.layers.Dense(
-            1, 
+            output_steps,
             activation='linear',
             kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
         )(x)
-        
+
         # ***************
         model = tf.keras.Model(inputs, outputs)
-        
+
         # ***************
         optimizer = tf.keras.optimizers.RMSprop(
                             learning_rate=dmhps.initial_learning_rate,
                             momentum=dmhps.momentum,
                             rho=0.85
                             )
-        
+
         # ***************
+        model.compile(optimizer=optimizer, loss=dmhps.loss, metrics=dmhps.metrics)
+        return model
+
+
+    def _build_encoder_decoder(self, dmhps):
+        """Encoder-Decoder nieautoregresyjny: Encoder BiGRU → state → Decoder GRU → Dense.
+        Działa dla output_steps=1 i output_steps>1.
+        """
+        ile_nodow = dmhps.warstwy[2]
+
+        # Encoder
+        inputs = tf.keras.Input(shape=self.input_shape)
+        _, encoder_state = tf.keras.layers.GRU(
+            ile_nodow,
+            return_sequences=False,
+            return_state=True,
+            kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
+        )(inputs)
+
+        # Decoder (nieautoregresyjny: state → repeat → GRU → Dense)
+        x = tf.keras.layers.RepeatVector(self.output_steps)(encoder_state)
+        x = tf.keras.layers.GRU(
+            ile_nodow,
+            return_sequences=True,
+            kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
+        )(x, initial_state=encoder_state)
+        x = tf.keras.layers.Dropout(dmhps.dropout)(x)
+        x = tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Dense(1, activation='linear')
+        )(x)
+        # reshape do (batch, output_steps)
+        outputs = tf.keras.layers.Reshape((self.output_steps,))(x)
+
+        model = tf.keras.Model(inputs, outputs)
+        optimizer = tf.keras.optimizers.RMSprop(
+            learning_rate=dmhps.initial_learning_rate,
+            momentum=dmhps.momentum,
+            rho=0.85
+        )
         model.compile(optimizer=optimizer, loss=dmhps.loss, metrics=dmhps.metrics)
         return model
     

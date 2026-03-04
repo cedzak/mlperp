@@ -34,9 +34,7 @@ ISDEEP=False; ISDUAL=False ## 1 Shallow Single
 # ISDEEP=False; ISDUAL=True  ## 3 Shallow Dual
 # ISDEEP=True;  ISDUAL=True  ## 4 Deep Dual
 
-WYBORKOLS = None # 'gdaciep_base_kols' # 
-HOURSAHEAD = 0
-
+WYBORKOLS = None # 'gdaciep_base_kols' #
 
 CIEPLO = True
 COROBIE_GDA = "_CIEPLO" if CIEPLO else "_TGE"
@@ -111,8 +109,7 @@ if __name__ == "__main__":
         wyborkols=WYBORKOLS,
         timestampplus=TIMESTAMPPLUS,
         corobie=COROBIE,
-        hours_ahead=HOURSAHEAD,
-        
+
         # Parametry główne
         isdeep=ISDEEP,
         isdual=ISDUAL,

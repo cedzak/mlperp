@@ -24,39 +24,52 @@ from sklearn.model_selection import KFold
 
 
 class KluskiConfig:
-    def __init__(self, df_for_keras, 
-                 qty_train, qty_val, qty_test, 
+    def __init__(self, df_for_keras,
+                 qty_train, qty_val, qty_test,
                  lp_kolumny_flagi,
                  epochs, batchsize, seqlen,
                  data_prep_file,
-                 testsetatlast=False):
+                 testsetatlast=False,
+                 output_steps=1):
         """Konfiguracja i tworzenie datasetów z sekwencjami czasowymi.
         NIKT TEGO NIE WIE CZY TEN KOD CIĄGLE DZIAŁA BEZ ZARZUTU GDYBY sequence_stride != 1
         """
         self.testsetatlast = testsetatlast
         self.data_prep_file = data_prep_file
+        self.output_steps = output_steps
 
         self.epochs = epochs
         self.batchsize = batchsize
         self.seqlen = seqlen
-        
+
         self.sampling_rate = 1
         self.sequence_stride = 1
         self.delay = self.sampling_rate * self.seqlen
-        
+
         self.df_for_keras = df_for_keras
         # zaokrąglam bo on w konwersji z PANDAS nd NUMPY traci info ze ma być zaokrąglone, i dodaje mi cyfry
         # np. 0.007 --> 0.00699999975040555000
         self.X_for_keras = np.round(df_for_keras.drop('target', axis=1).values, 3)
-        self.y_for_keras = np.round(df_for_keras['target'].values, 3)
+        y_1d = np.round(df_for_keras['target'].values, 3)
+        if output_steps > 1:
+            # Multi-step: y[i] = [y_1d[i], y_1d[i+1], ..., y_1d[i+output_steps-1]]
+            n = len(y_1d) - output_steps + 1
+            self.y_for_keras = np.stack([y_1d[i:i+n] for i in range(output_steps)], axis=1)
+            # shape: (n, output_steps); trim X do tej samej długości
+            self.X_for_keras = self.X_for_keras[:n]
+            # Dopasuj qty (ostatni set absorbuje przycięcie)
+            trim = len(y_1d) - n
+            qty_test = max(0, qty_test - trim)
+        else:
+            self.y_for_keras = y_1d
 
         self.qty_train = qty_train
         self.qty_val   = qty_val
         self.qty_test  = qty_test
         self.lp_kolumny_flagi = lp_kolumny_flagi
-        
+
         self.params_kluski = {
-            k: v for k, v in vars(self).items() 
+            k: v for k, v in vars(self).items()
             if k not in ["params_kluski", "df_for_keras", "X_for_keras", "y_for_keras"]
         }
 
