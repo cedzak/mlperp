@@ -1,0 +1,136 @@
+
+2026-03-04 08:06:59 - klasy_jesien.runner - INFO - 
+
+
+
+
+
+
+
+
+
+######################################################################
+2026-03-04 08:06:59 - klasy_data.d1_pds - INFO - ================================================================================
+2026-03-04 08:06:59 - klasy_data.d1_pds - INFO - Inicjalizacja PdsSetup w PdsSetup
+2026-03-04 08:06:59 - klasy_data.d1_pds - INFO - Wczytuje dane z pliku CSV ../mojecsvy/gdaciep/cieplo_pogoda_czas__sg.csv
+2026-03-04 08:07:00 - klasy_data.d1_pds - DEBUG - Sorted columns of df: ['cloud_cover', 'cos_day_of_week', 'cos_hour', 'cos_month', 'day_of_week', 'day_of_year', 'diffuse_radiation', 'direct_radiation', 'ghi', 'hour', 'humidity', 'is_weekend', 'lag_168_MW_th', 'lag_1_MW_th', 'lag_24_MW_th', 'lag_2_MW_th', 'lag_48_MW_th', 'month', 'roll_mean_48_MW_th', 'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation', 'roll_mean_48_direct_radiation', 'roll_mean_48_humidity', 'roll_mean_48_t_air', 'roll_mean_48_t_powrotu', 'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m', 'roll_mean_48_wind_speed_10m', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover', 'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation', 'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu', 'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m', 'roll_mean_6_wind_speed_10m', 'sin_day_of_week', 'sin_hour', 'sin_month', 't_air', 't_powrotu', 't_zasilania', 'target', 'wind_speed_100m', 'wind_speed_10m']
+2026-03-04 08:07:00 - klasy_data.d1_pds - INFO - ^^^^^^UWAGA UWAGA, TYLKO KOLUMNY TYPU float ZOSTANA SCALED^^^^^
+2026-03-04 08:07:00 - klasy_data.d1_pds - INFO - Index(['t_air', 't_powrotu', 't_zasilania', 'wind_speed_10m',
+       'wind_speed_100m', 'ghi', 'direct_radiation', 'diffuse_radiation',
+       'sin_hour', 'cos_hour', 'sin_month', 'cos_month', 'sin_day_of_week',
+       'cos_day_of_week', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover',
+       'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation',
+       'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu',
+       'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m',
+       'roll_mean_6_wind_speed_10m', 'roll_mean_48_MW_th',
+       'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation',
+       'roll_mean_48_direct_radiation', 'roll_mean_48_humidity',
+       'roll_mean_48_t_air', 'roll_mean_48_t_powrotu',
+       'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m',
+       'roll_mean_48_wind_speed_10m', 'lag_1_MW_th', 'lag_2_MW_th',
+       'lag_24_MW_th', 'lag_48_MW_th', 'lag_168_MW_th'],
+      dtype='object')
+2026-03-04 08:07:00 - klasy_data.d1_pds - INFO - ^^^^^^SKALOWANIE POWIODLO SIE^^^^^
+2026-03-04 08:07:00 - klasy_data.d1_pds - INFO - jest 43635 i 43635, len(df) i len(df_for_keras) powinny być sobie równe
+
+2026-03-04 08:07:00 - klasy_jesien.archit1_shallow - INFO - 
+
+==================Data Mono==================
+2026-03-04 08:07:00 - klasy_jesien.archit1_shallow - INFO - 
+
+=========Run 0=========
+2026-03-04 08:08:33 - klasy_jesien.archit1_shallow - INFO - Czas treningu dla Run 0: 2 minut 
+nval_mse, val_mae = 8.478, 1.711
+2026-03-04 08:08:33 - klasy_jesien.archit1_shallow - INFO - 
+
+=========Run 1=========
+2026-03-04 08:10:33 - Comm - DEBUG - handle_close[c6bee100178e11f19e6f52540011ade1]({'header': {'msg_id': '83197757-d220b37fa447db51fbf87275_10122_18', 'msg_type': 'comm_close', 'username': 'sylwia', 'session': '83197757-d220b37fa447db51fbf87275', 'date': datetime.datetime(2026, 3, 4, 7, 10, 33, 797206, tzinfo=tzutc()), 'version': '5.3'}, 'msg_id': '83197757-d220b37fa447db51fbf87275_10122_18', 'msg_type': 'comm_close', 'parent_header': {}, 'metadata': {}, 'content': {'comm_id': 'c6bee100178e11f19e6f52540011ade1', 'data': {}}, 'buffers': []})
+2026-03-04 08:18:17 - klasy_jesien.runner - INFO - 
+
+
+
+
+
+
+
+
+
+######################################################################
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - ================================================================================
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - Inicjalizacja PdsSetup w PdsSetup
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - Wczytuje dane z pliku CSV ../mojecsvy/gdaciep/cieplo_pogoda_czas__sg.csv
+2026-03-04 08:18:17 - klasy_data.d1_pds - DEBUG - Sorted columns of df: ['cloud_cover', 'cos_day_of_week', 'cos_hour', 'cos_month', 'day_of_week', 'day_of_year', 'diffuse_radiation', 'direct_radiation', 'ghi', 'hour', 'humidity', 'is_weekend', 'lag_168_MW_th', 'lag_1_MW_th', 'lag_24_MW_th', 'lag_2_MW_th', 'lag_48_MW_th', 'month', 'roll_mean_48_MW_th', 'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation', 'roll_mean_48_direct_radiation', 'roll_mean_48_humidity', 'roll_mean_48_t_air', 'roll_mean_48_t_powrotu', 'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m', 'roll_mean_48_wind_speed_10m', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover', 'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation', 'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu', 'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m', 'roll_mean_6_wind_speed_10m', 'sin_day_of_week', 'sin_hour', 'sin_month', 't_air', 't_powrotu', 't_zasilania', 'target', 'wind_speed_100m', 'wind_speed_10m']
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - ^^^^^^UWAGA UWAGA, TYLKO KOLUMNY TYPU float ZOSTANA SCALED^^^^^
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - Index(['t_air', 't_powrotu', 't_zasilania', 'wind_speed_10m',
+       'wind_speed_100m', 'ghi', 'direct_radiation', 'diffuse_radiation',
+       'sin_hour', 'cos_hour', 'sin_month', 'cos_month', 'sin_day_of_week',
+       'cos_day_of_week', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover',
+       'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation',
+       'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu',
+       'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m',
+       'roll_mean_6_wind_speed_10m', 'roll_mean_48_MW_th',
+       'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation',
+       'roll_mean_48_direct_radiation', 'roll_mean_48_humidity',
+       'roll_mean_48_t_air', 'roll_mean_48_t_powrotu',
+       'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m',
+       'roll_mean_48_wind_speed_10m', 'lag_1_MW_th', 'lag_2_MW_th',
+       'lag_24_MW_th', 'lag_48_MW_th', 'lag_168_MW_th'],
+      dtype='object')
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - ^^^^^^SKALOWANIE POWIODLO SIE^^^^^
+2026-03-04 08:18:17 - klasy_data.d1_pds - INFO - jest 43635 i 43635, len(df) i len(df_for_keras) powinny być sobie równe
+
+2026-03-04 08:18:17 - klasy_jesien.archit1_shallow - INFO - 
+
+==================Data Mono==================
+2026-03-04 08:18:17 - klasy_jesien.archit1_shallow - INFO - 
+
+=========Run 0=========
+2026-03-04 08:19:42 - Comm - DEBUG - handle_close[376c9810179a11f1857352540011ade1]({'header': {'msg_id': 'e2e00b68-8535b84c5dbcb04c1f15d752_18965_12', 'msg_type': 'comm_close', 'username': 'sylwia', 'session': 'e2e00b68-8535b84c5dbcb04c1f15d752', 'date': datetime.datetime(2026, 3, 4, 7, 19, 42, 869640, tzinfo=tzutc()), 'version': '5.3'}, 'msg_id': 'e2e00b68-8535b84c5dbcb04c1f15d752_18965_12', 'msg_type': 'comm_close', 'parent_header': {}, 'metadata': {}, 'content': {'comm_id': '376c9810179a11f1857352540011ade1', 'data': {}}, 'buffers': []})
+2026-03-04 08:19:56 - klasy_jesien.runner - INFO - 
+
+
+
+
+
+
+
+
+
+######################################################################
+2026-03-04 08:19:56 - klasy_data.d1_pds - INFO - ================================================================================
+2026-03-04 08:19:56 - klasy_data.d1_pds - INFO - Inicjalizacja PdsSetup w PdsSetup
+2026-03-04 08:19:56 - klasy_data.d1_pds - INFO - Wczytuje dane z pliku CSV ../mojecsvy/gdaciep/cieplo_pogoda_czas__sg.csv
+2026-03-04 08:19:56 - klasy_data.d1_pds - DEBUG - Sorted columns of df: ['cloud_cover', 'cos_day_of_week', 'cos_hour', 'cos_month', 'day_of_week', 'day_of_year', 'diffuse_radiation', 'direct_radiation', 'ghi', 'hour', 'humidity', 'is_weekend', 'lag_168_MW_th', 'lag_1_MW_th', 'lag_24_MW_th', 'lag_2_MW_th', 'lag_48_MW_th', 'month', 'roll_mean_48_MW_th', 'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation', 'roll_mean_48_direct_radiation', 'roll_mean_48_humidity', 'roll_mean_48_t_air', 'roll_mean_48_t_powrotu', 'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m', 'roll_mean_48_wind_speed_10m', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover', 'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation', 'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu', 'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m', 'roll_mean_6_wind_speed_10m', 'sin_day_of_week', 'sin_hour', 'sin_month', 't_air', 't_powrotu', 't_zasilania', 'target', 'wind_speed_100m', 'wind_speed_10m']
+2026-03-04 08:19:56 - klasy_data.d1_pds - INFO - ^^^^^^UWAGA UWAGA, TYLKO KOLUMNY TYPU float ZOSTANA SCALED^^^^^
+2026-03-04 08:19:56 - klasy_data.d1_pds - INFO - Index(['t_air', 't_powrotu', 't_zasilania', 'wind_speed_10m',
+       'wind_speed_100m', 'ghi', 'direct_radiation', 'diffuse_radiation',
+       'sin_hour', 'cos_hour', 'sin_month', 'cos_month', 'sin_day_of_week',
+       'cos_day_of_week', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover',
+       'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation',
+       'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu',
+       'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m',
+       'roll_mean_6_wind_speed_10m', 'roll_mean_48_MW_th',
+       'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation',
+       'roll_mean_48_direct_radiation', 'roll_mean_48_humidity',
+       'roll_mean_48_t_air', 'roll_mean_48_t_powrotu',
+       'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m',
+       'roll_mean_48_wind_speed_10m', 'lag_1_MW_th', 'lag_2_MW_th',
+       'lag_24_MW_th', 'lag_48_MW_th', 'lag_168_MW_th'],
+      dtype='object')
+2026-03-04 08:19:57 - klasy_data.d1_pds - INFO - ^^^^^^SKALOWANIE POWIODLO SIE^^^^^
+2026-03-04 08:19:57 - klasy_data.d1_pds - INFO - jest 43635 i 43635, len(df) i len(df_for_keras) powinny być sobie równe
+
+2026-03-04 08:19:57 - klasy_jesien.archit1_shallow - INFO - 
+
+==================Data Mono==================
+2026-03-04 08:19:57 - klasy_jesien.archit1_shallow - INFO - 
+
+=========Run 0=========
+2026-03-04 08:21:30 - klasy_jesien.archit1_shallow - INFO - Czas treningu dla Run 0: 2 minut 
+nval_mse, val_mae = 8.485, 1.714
+2026-03-04 08:21:30 - klasy_jesien.archit1_shallow - INFO - 
+
+=========Run 1=========
+2026-03-04 08:22:59 - klasy_jesien.archit1_shallow - INFO - Czas treningu dla Run 1: 1 minut 
+nval_mse, val_mae = 8.465, 1.711
+2026-03-04 08:26:49 - Comm - DEBUG - handle_close[83ca9388179a11f1857352540011ade1]({'header': {'msg_id': '9d1c5c69-bec6971f04827a2df74e1f6a_18965_13', 'msg_type': 'comm_close', 'username': 'sylwia', 'session': '9d1c5c69-bec6971f04827a2df74e1f6a', 'date': datetime.datetime(2026, 3, 4, 7, 26, 49, 427260, tzinfo=tzutc()), 'version': '5.3'}, 'msg_id': '9d1c5c69-bec6971f04827a2df74e1f6a_18965_13', 'msg_type': 'comm_close', 'parent_header': {}, 'metadata': {}, 'content': {'comm_id': '83ca9388179a11f1857352540011ade1', 'data': {}}, 'buffers': []})

@@ -1,0 +1,175 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║           HYPERPARAMETER TUNING - QUICK REFERENCE CARD                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🚀 QUICK START                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+1. Edytuj run_tuner.py:
+   ├─ TUNER_STRATEGY = "bayesian"  # lub "random", "hyperband"
+   ├─ DMTYPE = "bigruta"            # lub "lstm"
+   ├─ MAX_TRIALS = 30
+   └─ ILERUNOW_PER_TRIAL = 3
+
+2. Uruchom:
+   $ python run_tuner.py
+
+3. Analizuj:
+   $ python analyze_tuner_results.py
+
+4. Użyj:
+   Skopiuj kod z best_hps_code__*.py do inputs/i_mdeep_hps.py
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🎯 STRATEGIE                                                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌────────────┬────────────┬──────────────────┬─────────────────────┐
+│ Strategia  │ Max Trials │ Czas (przybl.)   │ Kiedy używać        │
+├────────────┼────────────┼──────────────────┼─────────────────────┤
+│ random     │ 20-50      │ 2-6 h            │ Wstępne rozpoznanie │
+│ bayesian ⭐│ 30-100     │ 4-16 h           │ Dokładna opt.       │
+│ hyperband  │ 100-200    │ 8-24 h           │ Duża przestrzeń     │
+└────────────┴────────────┴──────────────────┴─────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🔧 TUNOWANE HIPERPARAMETRY                                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+Model BIGRUTA:
+├─ initial_learning_rate  0.0001 - 0.1 (log scale)
+├─ momentum                [0.5, 0.8, 0.9]
+├─ dropout                 0.0 - 0.5 (step 0.1)
+├─ regl2                   [0.0, 1e-5, 1e-4, 1e-3]
+├─ patience_lr             [10, 20, 50, 80]
+├─ patience_es             [10, 20, 50, 80]
+├─ min_delta               [0.01, 0.1, 0.5]
+├─ variant_gru             ["1xGRU", "2xGRU"]
+├─ variant_ta              ["simple_TA", "directional_TA"]
+└─ variant_ile_nodow       [32, 64, 128, 256]
+
+Model LSTM:
+└─ variant_ile_nodow       [16, 32, 64, 128]
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 📊 TYPOWE SCENARIUSZE                                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+SZYBKI TEST (30 min):
+  TUNER_STRATEGY = "random"
+  MAX_TRIALS = 5
+  ILERUNOW_PER_TRIAL = 1
+  EPOCHS = 50
+
+STANDARDOWY (8 h):
+  TUNER_STRATEGY = "bayesian"
+  MAX_TRIALS = 30
+  ILERUNOW_PER_TRIAL = 3
+  EPOCHS = 200
+
+INTENSYWNY (24 h):
+  TUNER_STRATEGY = "bayesian"
+  MAX_TRIALS = 100
+  ILERUNOW_PER_TRIAL = 5
+  EPOCHS = 300
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🐛 TROUBLESHOOTING                                                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+Problem: Out of Memory (OOM)
+  ✓ BATCHSIZE = 64 (↓ z 128)
+  ✓ SEQLEN = 48 (↓ z 72)
+  ✓ Zmniejsz max jednostek w warstwach
+
+Problem: Za długo trwa
+  ✓ MAX_TRIALS = 20 (↓ z 50)
+  ✓ ILERUNOW_PER_TRIAL = 1 (↓ z 3)
+  ✓ EPOCHS = 150 (↓ z 200)
+  ✓ Użyj "hyperband"
+
+Problem: Nie poprawia baseline
+  ✓ MAX_TRIALS = 100 (↑)
+  ✓ Zmień strategię na "hyperband"
+  ✓ Sprawdź przestrzeń przeszukiwania
+
+Problem: Kernel died / GPU crash
+  ✓ Zmniejsz BATCHSIZE
+  ✓ Sprawdź temperatury GPU
+  ✓ Dodaj więcej clear_session()
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 📁 PLIKI WYNIKOWE                                                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+W katalogu mojerys/gda/tuner_<timestamp>/:
+
+├─ best_hyperparameters__*.json       ← JSON z parametrami
+├─ best_hps_code__*.py                ← Gotowy kod do skopiowania ⭐
+├─ trials_results__*.csv              ← Wszystkie trials
+├─ tuning_summary__*.txt              ← Statystyki
+├─ tuning_progress__*.png             ← Wykres postępu
+├─ hyperparameter_importance__*.png   ← Znaczenie HP
+└─ tuner_log.log                      ← Szczegółowe logi
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 💡 BEST PRACTICES                                                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+1. ✓ Zacznij od małego testu (5-10 trials)
+2. ✓ Zmniejsz epochs dla tuningu (150-200)
+3. ✓ Użyj ilerunow_per_trial=3 (balance)
+4. ✓ Monitoruj: tail -f tuner_log.log
+5. ✓ GPU: nvidia-smi -l 1
+6. ✓ Możesz wznowić przerwany tuning
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 📖 WIĘCEJ INFORMACJI                                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+Pełna dokumentacja:  tuner_configs.py
+Quick start:         README_TUNER.md
+Przykłady:           run_tuner.py
+Analiza:             analyze_tuner_results.py
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🎓 PRZYKŁAD UŻYCIA                                                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+# 1. Uruchom tuning
+$ python run_tuner.py
+
+# 2. Po zakończeniu - analizuj
+$ python analyze_tuner_results.py
+
+# 3. Skopiuj najlepsze HP z:
+mojerys/gda/tuner_*/best_hps_code__*.py
+
+# 4. Wklej do:
+inputs/i_mdeep_hps.py
+
+# 5. Użyj w adamgda0.py:
+DMHPS_MONO = wynik_tuned_2025
+
+# 6. Uruchom normalny trening:
+$ python adamgda0.py
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ⚙️ PARAMETRY DO EDYCJI (run_tuner.py)                              │
+└─────────────────────────────────────────────────────────────────────┘
+
+TUNER_STRATEGY = "bayesian"  # "bayesian", "random", "hyperband"
+DMTYPE = "bigruta"            # "bigruta" lub "lstm"
+EPOCHS = 200                  # 150-300
+BATCHSIZE = 128               # 64, 128, 256
+SEQLEN = 72                   # 48, 72, 96
+WYBORKOLS_GDA = "gda_deepheat_bezsincos"
+MAX_TRIALS = 30               # 20-100
+ILERUNOW_PER_TRIAL = 3        # 1-5
+SPRKOD = False
+TESTSETATLAST = False
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║ Wersja: 1.0  │  Data: 2025-12-09  │  Autor: Sylwia + Claude         ║
+╚═══════════════════════════════════════════════════════════════════════╝

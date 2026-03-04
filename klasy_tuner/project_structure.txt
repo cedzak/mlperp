@@ -1,0 +1,133 @@
+├── ~~~~~~~~~~~~~~~~README_TUNER.md
+├── ~~~~~~~~~~~~~~~~TUNER_QUICK_REFERENCE.txt
+├── ~~~~~~~~~~~~~~~~analyze_tuner_results.py
+
+│   [I] IMPORTY:
+│       📦 import json
+│       📦 import pandas
+│       📦 import numpy
+│       📦 import matplotlib.pyplot
+│       📦 import seaborn
+│       📦 from pathlib import Path
+│       📦 import sys
+
+│   [K] KLASY:
+│       🏗️  TunerResultsAnalyzer
+│           └─ 🎯 __init__()
+│                  · tuner_dir
+│           └─ 🎯 _find_file()
+│                  · pattern
+│           └─ 🎯 print_summary()
+│           └─ 🎯 plot_convergence()
+│                  · save
+│           └─ 🎯 plot_hyperparameter_distributions()
+│                  · save
+│           └─ 🎯 plot_hyperparameter_vs_score()
+│                  · save
+│           └─ 🎯 get_top_trials()
+│                  · n
+│           └─ 🎯 compare_with_baseline()
+│                  · baseline_rmse
+│           └─ 🎯 generate_full_report()
+│
+├── ~~~~~~~~~~~~~~~~project_structure.txt
+├── ~~~~~~~~~~~~~~~~run_tuner.py
+
+│   [I] IMPORTY:
+│       📦 import os
+│       📦 from datetime import datetime
+│       📦 from inputs.i_columns import kols_map_gda
+│       📦 from klasy_data.d0_data import DataConfig
+│       📦 from tuner_main import DeepModelTuner, setup_logging, setup_gpu
+│
+├── ~~~~~~~~~~~~~~~~tuner_configs.py
+
+│   [F] FUNKCJE:
+│       🎯 print_config_recommendations()
+│
+├── ~~~~~~~~~~~~~~~~tuner_main.py
+
+│   [I] IMPORTY:
+│       📦 import os
+│       📦 import json
+│       📦 import logging
+│       📦 from pathlib import Path
+│       📦 from datetime import datetime
+│       📦 from playsound import playsound
+│       📦 import numpy
+│       📦 import pandas
+│       📦 import tensorflow
+│       📦 import keras_tuner
+│       📦 import matplotlib.pyplot
+│       📦 import seaborn
+│       📦 from klasy_data.d0_data import DataConfig
+│       📦 from klasy_data.d3_kds import KdsSetup
+│       📦 from klasy_jesien.archit2_deep import DeepArchitecture
+│       📦 from klasy_jesien.behav1_single import SingleBehavior
+│       📦 from inputs.i_columns import kols_map_gda
+│       📦 from inputs.i_mdeep_hps import DeepModelHps
+│       📦 from inputs.i_mdeep_hps import DeepModelHps
+│       📦 import time
+
+│   [K] KLASY:
+│       🏗️  DeepModelTuner
+│           └─ 🎯 __init__()
+│                  · datacfg
+│                  · wyborkols
+│                  · timestampplus
+│                  · epochs
+│                  · batchsize
+│                  · seqlen
+│                  · dmtype
+│                  · ilerunow_per_trial
+│                  · max_trials
+│                  · executions_per_trial
+│                  · tuner_strategy
+│                  · sprkod
+│                  · testsetatlast
+│                  · tuner_dir
+│                  · arabian_wav
+│                  · game_wav
+│           └─ 🎯 _setup_logging()
+│           └─ 🎯 build_model()
+│                  · hp
+│           └─ 🎯 objective_function()
+│                  · hp
+│           └─ 🎯 create_tuner()
+│           └─ 🎯 run_tuning()
+│           └─ 🎯 _save_best_hyperparameters()
+│                  · best_hps_dict
+│                  · tuner
+│           └─ 🎯 _generate_reports()
+│                  · tuner
+│           └─ 🎯 _plot_score_progression()
+│                  · df_results
+│           └─ 🎯 _plot_hyperparameter_importance()
+│                  · df_results
+│           └─ 🎯 _save_summary_statistics()
+│                  · df_results
+
+│   [F] FUNKCJE:
+│       🎯 setup_logging()
+│       🎯 setup_gpu()
+│
+├── ~~~~~~~~~~~~~~~~zz_project_visual.py
+
+│   [I] IMPORTY:
+│       📦 import os
+│       📦 import ast
+│       📦 from pathlib import Path
+│       📦 import ast
+│       📦 from pathlib import Path
+
+│   [F] FUNKCJE:
+│       🎯 analyze_file()
+│              · file_path
+│       🎯 save_tree_to_file()
+│              · directory
+│              · output_file
+│              · prefix
+│              · ignore_dirs
+│              · output_lines
+│
+└── ~~~~~~~~~~~~~~~~zz_project_visual.txt

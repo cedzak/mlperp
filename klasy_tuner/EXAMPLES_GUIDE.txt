@@ -1,0 +1,299 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    JAK UŻYWAĆ TUNERA - PRZYKŁADY                      ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 📝 PRZYKŁAD 1: Quick Test (30 min) - Sprawdź czy działa            │
+└─────────────────────────────────────────────────────────────────────┘
+
+W pliku run_tuner.py:
+
+USE_PRESET_CONFIG = True
+PRESET_NAME = "quick_test"
+
+Uruchom:
+$ python run_tuner.py
+
+Co się stanie:
+✓ 5 różnych konfiguracji hiperparametrów
+✓ 1 run dla każdej (szybko, bez uśredniania)
+✓ 50 epok per run
+✓ ~30 minut
+✓ Sprawdzisz czy kod działa poprawnie
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🌙 PRZYKŁAD 2: Overnight (8-12h) - NA NOC ⭐                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+W pliku run_tuner.py:
+
+USE_PRESET_CONFIG = True
+PRESET_NAME = "overnight"
+
+Uruchom przed snem:
+$ python run_tuner.py
+
+Co się stanie:
+✓ 60 różnych konfiguracji (dużo!)
+✓ 3 runy dla każdej (stabilne wyniki)
+✓ 250 epok per run
+✓ ~8-12 godzin
+✓ Rano masz najlepsze hiperparametry!
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🔧 PRZYKŁAD 3: Własna konfiguracja                                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+W pliku run_tuner.py:
+
+USE_PRESET_CONFIG = False
+
+# Teraz możesz edytować ręcznie:
+TUNER_STRATEGY = "random"      # Chcę random search
+MAX_TRIALS = 20                # 20 prób
+ILERUNOW_PER_TRIAL = 2         # 2 runy per trial
+EPOCHS = 150                   # 150 epok
+BATCHSIZE = 64                 # Mały batch (słabsze GPU)
+SEQLEN = 48                    # Krótsza sekwencja
+DMTYPE = "lstm"                # Chcę LSTM zamiast BiGRU
+
+Uruchom:
+$ python run_tuner.py
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🔍 PRZYKŁAD 4: Eksploracja (2-4h) - Poznaj przestrzeń              │
+└─────────────────────────────────────────────────────────────────────┘
+
+W pliku run_tuner.py:
+
+USE_PRESET_CONFIG = True
+PRESET_NAME = "exploration"
+
+Uruchom:
+$ python run_tuner.py
+
+Co się stanie:
+✓ 50 losowych konfiguracji
+✓ 1 run dla każdej (szybko)
+✓ Random search (eksploracja)
+✓ ~2-4 godziny
+✓ Poznasz które regiony są obiecujące
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 💪 PRZYKŁAD 5: Intensywny (24-48h) - Finałowy tuning               │
+└─────────────────────────────────────────────────────────────────────┘
+
+W pliku run_tuner.py:
+
+USE_PRESET_CONFIG = True
+PRESET_NAME = "intensive"
+
+Uruchom (np. w weekend):
+$ python run_tuner.py
+
+Co się stanie:
+✓ 100 konfiguracji
+✓ 5 runów dla każdej (bardzo stabilne)
+✓ 300 epok per run
+✓ ~24-48 godzin
+✓ Maksymalna dokładność tuningu
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🎮 PRZYKŁAD 6: Zmiana tylko jednego parametru                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+Chcesz użyć preset "overnight" ale zmienić model na LSTM?
+
+Opcja A - Po importcie preset:
+from tuner_configs import CONFIG_OVERNIGHT
+
+# Skopiuj i zmodyfikuj
+my_config = CONFIG_OVERNIGHT.copy()
+my_config['dmtype'] = 'lstm'  # Zmiana!
+
+PRESET_CONFIGS = {
+    # ... inne
+    "my_overnight_lstm": my_config
+}
+
+PRESET_NAME = "my_overnight_lstm"
+
+
+Opcja B - Użyj preset jako baza:
+USE_PRESET_CONFIG = True
+PRESET_NAME = "overnight"
+
+# ... (załaduje konfigurację)
+
+# Potem nadpisz:
+DMTYPE = "lstm"  # To nadpisze wartość z preset
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 💾 PRZYKŁAD 7: Co zrobić z wynikami                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+Po zakończeniu tuningu:
+
+# 1. Znajdź katalog z wynikami
+cd ../mojerys/gda/
+ls -lt tuner_*  # Pokaże najnowsze
+
+# 2. Analizuj wyniki
+python analyze_tuner_results.py
+
+# 3. Otwórz najlepsze hiperparametry
+cd tuner_<timestamp>
+cat best_hps_code__*.py
+
+# 4. Skopiuj do projektu
+# Otwórz best_hps_code__*.py
+# Skopiuj cały blok DeepModelHps
+# Wklej do inputs/i_mdeep_hps.py
+
+# 5. Użyj w adamgda0.py
+# DMHPS_MONO = wynik_tuned_2025
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 🐛 PRZYKŁAD 8: Co robić gdy coś nie działa                         │
+└─────────────────────────────────────────────────────────────────────┘
+
+Problem: Out of Memory
+
+Rozwiązanie:
+USE_PRESET_CONFIG = True
+PRESET_NAME = "low_memory"  # ← Specjalna konfiguracja!
+
+Lub ręcznie:
+BATCHSIZE = 64  # ← mniejszy
+SEQLEN = 48     # ← krótszy
+
+
+Problem: Za długo trwa
+
+Rozwiązanie 1 - Użyj szybszego preset:
+PRESET_NAME = "exploration"  # Zamiast "overnight"
+
+Rozwiązanie 2 - Zmniejsz trials:
+USE_PRESET_CONFIG = False
+MAX_TRIALS = 10  # Zamiast 60
+ILERUNOW_PER_TRIAL = 1  # Zamiast 3
+
+
+Problem: Wyniki nie lepsze niż baseline
+
+Rozwiązanie 1 - Daj więcej czasu:
+PRESET_NAME = "intensive"
+
+Rozwiązanie 2 - Najpierw exploration, potem dokładny:
+# Run 1:
+PRESET_NAME = "exploration"
+# Zobacz wyniki, znajdź obiecujące regiony
+
+# Run 2 (po analizie):
+# Zawęź przestrzeń przeszukiwania w tuner_main.py
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 📊 PRZYKŁAD 9: Porównanie różnych strategii                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+Chcesz porównać Bayesian vs Random vs Hyperband?
+
+# Run 1 - Bayesian (rano)
+PRESET_NAME = "standard"  # Bayesian, 4-8h
+
+# Run 2 - Random (wieczorem)
+USE_PRESET_CONFIG = False
+TUNER_STRATEGY = "random"
+MAX_TRIALS = 30
+# ... reszta jak standard
+
+# Run 3 - Hyperband (weekend)
+PRESET_NAME = "hyperband"
+
+Potem porównaj wyniki w analyze_tuner_results.py
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ ⚡ PRZYKŁAD 10: Dwuetapowy tuning (ZAAWANSOWANE)                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+Strategia: Najpierw szybko poznaj przestrzeń, potem dokładnie tunuj.
+
+# ETAP 1: Eksploracja (wieczór)
+PRESET_NAME = "exploration"
+python run_tuner.py
+
+# RANO: Zobacz wyniki
+python analyze_tuner_results.py
+# Zanotuj które parametry są najlepsze, np.:
+# - learning_rate: około 0.005-0.01
+# - dropout: 0.2
+# - units: 64
+
+# ETAP 2: Dokładny tuning (następna noc)
+# W tuner_main.py zawęź przestrzeń wokół tych wartości:
+# initial_learning_rate = hp.Float('initial_learning_rate',
+#                                   min_value=0.003,  # ← węziej!
+#                                   max_value=0.015,  # ← węziej!
+#                                   sampling='log')
+
+PRESET_NAME = "overnight"
+python run_tuner.py
+
+# Teraz masz BARDZO dokładnie wytunowane parametry!
+
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║ 💡 NAJCZĘSTSZE PYTANIA                                                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Q: Który preset wybrać na początek?
+A: "quick_test" (sprawdź czy działa), potem "overnight" (solidny tuning)
+
+Q: Jak długo trwa każdy preset?
+A: Patrz tabela w TUNER_QUICK_REFERENCE.txt
+
+Q: Czy mogę przerwać tuning i wznowić?
+A: TAK! Keras Tuner zapisuje postęp. Uruchom ponownie ten sam skrypt.
+
+Q: Co jeśli zmieni się liczba trials w trakcie?
+A: Keras Tuner kontynuuje od miejsca gdzie skończył
+
+Q: Jak monitorować postęp?
+A: tail -f tuner_log.log  # w katalogu tuner_<timestamp>
+
+Q: Czy mogę tunować batch_size i seqlen?
+A: Nie w obecnej wersji (są stałe). Ale możesz zrobić kilka runów z różnymi.
+
+Q: Co jeśli mam dużo GPU memory?
+A: Zwiększ BATCHSIZE = 256, SEQLEN = 96 w preset
+
+Q: Co jeśli mam mało GPU memory?
+A: PRESET_NAME = "low_memory"
+
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║ 🎯 MOJA REKOMENDACJA DLA CIEBIE NA NOC                                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+USE_PRESET_CONFIG = True
+PRESET_NAME = "overnight"
+
+python run_tuner.py
+
+Dlaczego?
+✓ 60 trials - dużo, ale nie za dużo
+✓ 3 runy per trial - stabilne wyniki
+✓ Bayesian - inteligentne przeszukiwanie
+✓ 8-12h - zdążysz rano
+✓ Najlepszy balance między czasem a jakością
+
+Dobranoc i powodzenia! 🌙
