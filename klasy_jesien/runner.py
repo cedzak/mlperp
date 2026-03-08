@@ -26,7 +26,12 @@ print(plt.rcParams["figure.facecolor"])  # powinno być 'white'
 print(plt.rcParams["axes.titlesize"])    # powinna być np. 18.0 (duża czcionka)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-from playsound import playsound
+import subprocess
+def playsound(path): #### bo to lepsze niż biblioteka playsound
+    try:
+        subprocess.run(['aplay', path], check=True, capture_output=True)
+    except Exception:
+        print(f"(Nie można odtworzyć dźwięku: {path})")
 import tensorflow as tf
 pd.options.display.max_columns = 10
 #

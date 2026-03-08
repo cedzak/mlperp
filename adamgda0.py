@@ -29,8 +29,8 @@ KOLOR_ACTUAL, KOLOR_PRED, KOLOR_RES = "limegreen", "navy", "purple"
 TESTSETATLAST = False ############### zostaw w spokoju
 SPRKOD = False
 
-ISDEEP=False; ISDUAL=False ## 1 Shallow Single
-# ISDEEP=True;  ISDUAL=False ## 2 Deep Single
+# ISDEEP=False; ISDUAL=False ## 1 Shallow Single
+ISDEEP=True;  ISDUAL=False ## 2 Deep Single
 # ISDEEP=False; ISDUAL=True  ## 3 Shallow Dual
 # ISDEEP=True;  ISDUAL=True  ## 4 Deep Dual
 
@@ -47,11 +47,11 @@ COROBIE_GDA = "_CIEPLO" if CIEPLO else "_TGE"
 ILERUNOW = 2 if (ISDEEP or not SPRKOD) else 1
 
 SMTYPE = "rfr"  #"lr" #  "xgbr" # 
-DMTYPE = "bigruta"   # "lstm"
+DMTYPE = "bigruta_seq2seq"   # "lstm"
 
 EPOCHS = 2 if SPRKOD else 500 
 BATCHSIZE = 128
-SEQLEN = 5 if SPRKOD else 72
+SEQLEN = 5 if SPRKOD else 24
 
 DMHPS_MONO = wynik_naj411
 DMHPS_REZIMA = wynik_5020_rezimA

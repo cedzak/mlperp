@@ -152,7 +152,7 @@ class DeepArchitecture(BaseArchitecture):
         elif self.dm_type == 'bigruta_seq2seq':
             self.model = self._build_gru_attention(dmhps, output_steps=self.output_steps)
         elif self.dm_type == 'enc_dec':
-            self.model = self._build_encoder_decoder(dmhps)
+            self.model = self._build_encoder_decoder(dmhps, output_steps=self.output_steps)
         else:  # 'bigruta' (default)
             self.model = self._build_gru_attention(dmhps)
 

@@ -112,7 +112,7 @@ class DfResHandler:
    
     
     
-    def _stworz_best_dfres(self, predictions, save=False):
+    def _stworz_best_dfres(self, predictions, save=True):
         """
         tworzy dfres   z użyciem predictions z najlepszego runu Mono / najlepszych runów AB
         to jest chyba tylko potrzebne do plot_all_in_one... no chyba że chcę po coś zapisać

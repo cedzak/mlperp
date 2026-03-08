@@ -158,7 +158,7 @@ class PdsSetup:
     def add_kol_target(self, df, df_virgin):
         """Przygotowuje kolumnę target i usuwa kol_target z df."""
         df['target'] = df[self.datacfg.kol_target]
-        df_virgin['target'] = df_virgin[self.datacfg.kol_target]
+        
         return df.drop(self.datacfg.kol_target, axis=1), df_virgin
 
 
@@ -193,7 +193,7 @@ class PdsSetup:
             
         ## nie rozumiem co robię w tej funkcji, ale na pewno majstruję przy liczbie wierszy, a więc 
         # to musi być pred ts_processor
-        df, df_virgin = self.add_kol_target(df, df_virgin)
+        df = self.add_kol_target(df)
         print(f"\njestem w d1_pds, main1.2, len(df)={len(df)}, len(df.index) = {len(df.index)}")
         print(df.head(3).to_string())
         print(df.tail(3).to_string())
