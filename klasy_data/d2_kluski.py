@@ -30,28 +30,82 @@ class KluskiConfig:
                  epochs, batchsize, seqlen,
                  data_prep_file,
                  testsetatlast=False,
-                 output_steps=1):
+                 output_steps=1,
+                 aligned=False):
         """Konfiguracja i tworzenie datasetów z sekwencjami czasowymi.
         NIKT TEGO NIE WIE CZY TEN KOD CIĄGLE DZIAŁA BEZ ZARZUTU GDYBY sequence_stride != 1
+
+        aligned=True: X[i..i+k-1] → y[i..i+k-1] (te same godziny co okno).
+        Okna nie nakładają się (stride=seqlen) i startują od pierwszej północy w danych.
+        Wymaga seqlen=24 (24 godziny = jedna doba).
+        aligned=False: stare zachowanie (X[i..i+k-1] → y[i+k], delay=seqlen).
         """
         self.testsetatlast = testsetatlast
         self.data_prep_file = data_prep_file
         self.output_steps = output_steps
+        self.aligned = aligned
 
         self.epochs = epochs
         self.batchsize = batchsize
         self.seqlen = seqlen
 
         self.sampling_rate = 1
-        self.sequence_stride = 1
-        self.delay = self.sampling_rate * self.seqlen
-
         self.df_for_keras = df_for_keras
         # zaokrąglam bo on w konwersji z PANDAS nd NUMPY traci info ze ma być zaokrąglone, i dodaje mi cyfry
         # np. 0.007 --> 0.00699999975040555000
         self.X_for_keras = np.round(df_for_keras.drop('target', axis=1).values, 3)
         y_1d = np.round(df_for_keras['target'].values, 3)
-        if output_steps > 1:
+
+        if aligned:
+            # ============================================================
+            # ALIGNED MODE: X[i..i+k-1] → y[i..i+k-1]
+            # Okna nie nakładają się (stride=seqlen=24), startują od północy.
+            # ============================================================
+            self.delay = 0
+            self.sequence_stride = seqlen  # non-overlapping
+
+            # Znajdź pierwszy wiersz z godziną 0:00 (północ)
+            self.midnight_offset = 0
+            if hasattr(df_for_keras.index, 'hour'):
+                for i, ts in enumerate(df_for_keras.index):
+                    if ts.hour == 0 and ts.minute == 0:
+                        self.midnight_offset = i
+                        break
+
+            # Buduj okna od północy, bez nakładania
+            n_rows = len(y_1d)
+            n_windows = (n_rows - self.midnight_offset) // seqlen
+            starts = [self.midnight_offset + i * seqlen for i in range(n_windows)]
+            self.X_windows_aligned = np.stack(
+                [self.X_for_keras[s : s + seqlen] for s in starts]
+            )  # shape: (n_windows, seqlen, n_features)
+            self.y_windows_aligned = np.stack(
+                [y_1d[s : s + seqlen] for s in starts]
+            )  # shape: (n_windows, seqlen)
+
+            # y_for_keras zostaje 1D — używane w _add_info_to_slownik_bazowy do wyciągania actuals
+            self.y_for_keras = y_1d
+
+            # Przelicz qty z wierszy na okna (okna = całe doby)
+            # Pierwsze midnight_offset wierszy przepada; reszta dzielona proporcjonalnie
+            self.qty_train = (qty_train - self.midnight_offset) // seqlen
+            self.qty_val   = qty_val   // seqlen
+            self.qty_test  = qty_test  // seqlen
+
+        elif output_steps > 1:
+            # ============================================================
+            # STARY KOD: multi-step (y dla k+1, k+2, ..., k+n)
+            # ============================================================
+            self.sequence_stride = 1
+            self.delay = self.sampling_rate * self.seqlen
+            # self.delay = self.sampling_rate * (self.seqlen +k) # gdzie k ile chcesz przeskoczyć
+            # Czyli delay powinien być wielokrotnością sampling_rate (czy seqlen) żeby y lądowało na tej samej siatce czasowej co okno. Inaczej trafiasz między próbki.
+            #
+            # Czy delay zależy od seqlen i sampling_rate?
+            # Parametrycznie — nie, delay to osobna liczba. Ale semantycznie — tak,
+            # bo okno X zajmuje seqlen * sampling_rate wierszy w oryginalnych danych.
+            # Żeby y zaczął się dokładnie po oknie, delay powinien być równy seqlen * sampling_rate.
+            # Jeśli masz seqlen=10, sampling_rate=2, to okno zajmuje 20 wierszy, więc delay=20 żeby y był "zaraz po".
             # Multi-step: y[i] = [y_1d[i], y_1d[i+1], ..., y_1d[i+output_steps-1]]
             n = len(y_1d) - output_steps + 1
             self.y_for_keras = np.stack([y_1d[i:i+n] for i in range(output_steps)], axis=1)
@@ -60,17 +114,35 @@ class KluskiConfig:
             # Dopasuj qty (ostatni set absorbuje przycięcie)
             trim = len(y_1d) - n
             qty_test = max(0, qty_test - trim)
-        else:
-            self.y_for_keras = y_1d
+            self.qty_train = qty_train
+            self.qty_val   = qty_val
+            self.qty_test  = qty_test
 
-        self.qty_train = qty_train
-        self.qty_val   = qty_val
-        self.qty_test  = qty_test
+        else:
+            # ============================================================
+            # STARY KOD: seq2one (X[i..i+k-1] → y[i+k])
+            # ============================================================
+            self.sequence_stride = 1
+            self.delay = self.sampling_rate * self.seqlen
+            # self.delay = self.sampling_rate * (self.seqlen +k) # gdzie k ile chcesz przeskoczyć
+            # Czyli delay powinien być wielokrotnością sampling_rate (czy seqlen) żeby y lądowało na tej samej siatce czasowej co okno. Inaczej trafiasz między próbki.
+            #
+            # Czy delay zależy od seqlen i sampling_rate?
+            # Parametrycznie — nie, delay to osobna liczba. Ale semantycznie — tak,
+            # bo okno X zajmuje seqlen * sampling_rate wierszy w oryginalnych danych.
+            # Żeby y zaczął się dokładnie po oknie, delay powinien być równy seqlen * sampling_rate.
+            # Jeśli masz seqlen=10, sampling_rate=2, to okno zajmuje 20 wierszy, więc delay=20 żeby y był "zaraz po".
+            self.y_for_keras = y_1d
+            self.qty_train = qty_train
+            self.qty_val   = qty_val
+            self.qty_test  = qty_test
+
         self.lp_kolumny_flagi = lp_kolumny_flagi
 
         self.params_kluski = {
             k: v for k, v in vars(self).items()
-            if k not in ["params_kluski", "df_for_keras", "X_for_keras", "y_for_keras"]
+            if k not in ["params_kluski", "df_for_keras", "X_for_keras", "y_for_keras",
+                         "X_windows_aligned", "y_windows_aligned"]
         }
 
 
@@ -110,9 +182,35 @@ class KluskiConfig:
     
     
 
+    def _wyczaruj_datasets_aligned(self, train_kdict, val_kdict, test_kdict):
+        """Tworzy datasety dla aligned mode z pre-built windows (from_tensor_slices).
+        Okna są nienakladające się (stride=seqlen), startują od północy.
+        train_kdict["last_ywiersz_liczonyod0"] to INDEKS OKNA (nie wiersza).
+        """
+        X_w = self.X_windows_aligned  # (n_windows, seqlen, n_features)
+        y_w = self.y_windows_aligned  # (n_windows, seqlen)
+
+        train_end = train_kdict["last_ywiersz_liczonyod0"] + 1  # exclusive window index
+        val_end   = val_kdict["last_ywiersz_liczonyod0"]   + 1
+        test_end  = test_kdict["last_ywiersz_liczonyod0"]  + 1
+
+        def make_ds(X, y, batchsize):
+            ds = tf.data.Dataset.from_tensor_slices((X, y))
+            return ds.batch(batchsize)
+
+        train_kds = make_ds(X_w[:train_end],          y_w[:train_end],          self.batchsize)
+        val_kds   = make_ds(X_w[train_end:val_end],   y_w[train_end:val_end],   self.batchsize // 2)
+        test_kds  = None
+        if self.testsetatlast:
+            test_kds = make_ds(X_w[val_end:test_end], y_w[val_end:test_end],    self.batchsize // 2)
+
+        return train_kds, val_kds, test_kds
+
+
     def _wyczaruj_keras_datasets(self, train_kdict, val_kdict, test_kdict):
         """Tworzy datasety Keras dla train/val/test.
-       
+        W trybie aligned deleguje do _wyczaruj_datasets_aligned.
+
         każdy kds to tuple (X,y), gdzie X to "kluski" (sekwencje), a y to floaty
         X_for_keras[0:5]   → klusek 0  → target y_for_keras[5]
         X_for_keras[1:6]   → klusek 1  → target y_for_keras[6]
@@ -135,6 +233,9 @@ class KluskiConfig:
         !!! taki defaultowy idx to liczba porządkowa liczona od zera !!!
         """
         # self.nauka__idx_defaultowy_liczony_jest_od_zera()
+
+        if self.aligned:
+            return self._wyczaruj_datasets_aligned(train_kdict, val_kdict, test_kdict)
 
         train_kds = tf.keras.utils.timeseries_dataset_from_array(
             self.X_for_keras, # [:-self.delay], # 2025.10.28 to było źle, kończył choć mogł zrobić jeszcze kilka klusków
@@ -201,8 +302,16 @@ class KluskiConfig:
 
         first_ywiersz_liczonyod0 = last_ywiersz_liczonyod0 -ilosc_kluskow +1 # słupki w płocie
 
-        y_actuals = self.y_for_keras[ first_ywiersz_liczonyod0 : last_ywiersz_liczonyod0 +1 ]
-        y_indices = self.df_for_keras.index[ first_ywiersz_liczonyod0 : last_ywiersz_liczonyod0 +1 ]
+        if self.aligned:
+            # first/last są INDEKSAMI OKIEN; każde okno zajmuje seqlen wierszy.
+            # Wiersz startowy okna w_idx = midnight_offset + w_idx * seqlen
+            row_start = self.midnight_offset + first_ywiersz_liczonyod0 * self.seqlen
+            row_end   = self.midnight_offset + (last_ywiersz_liczonyod0 + 1) * self.seqlen
+            y_actuals = self.y_for_keras[row_start : row_end]          # 1D, n_windows * seqlen
+            y_indices = self.df_for_keras.index[row_start : row_end]   # pełne timestampy
+        else:
+            y_actuals = self.y_for_keras[ first_ywiersz_liczonyod0 : last_ywiersz_liczonyod0 +1 ]
+            y_indices = self.df_for_keras.index[ first_ywiersz_liczonyod0 : last_ywiersz_liczonyod0 +1 ]
 
         with open(self.data_prep_file, "a") as file:
             file.write(

@@ -22,10 +22,11 @@ ILERUNOW = 2
 SPRKOD = True
 
 ISDEEP = False
-ISDUAL = False 
+ISDUAL = False
+ALIGNED = False  # True: X[i..i+k-1] → y[i..i+k-1]; wymaga ISDEEP=True, SEQLEN=24, DMTYPE='enc_dec' lub 'bigruta_seq2seq'
 
-SMTYPE = "rfr"  #"lr" #  "xgbr" # 
-DMTYPE = "bigruta"   # "lstm"
+SMTYPE = "rfr"  #"lr" #  "xgbr" #
+DMTYPE = "bigruta"   # "lstm" # "enc_dec" # "bigruta_seq2seq"
 
 WYBORKOLS_MR = "mr_testowe" if SPRKOD else "mr_niedokonczony_i_shutdown"
 
@@ -56,7 +57,8 @@ DATACFG_MR = DataConfig(
         #
         date_start = '2023-03-31 11:00:00', date_end = '2024-02-27 18:00:00',
         out1_start = '2023-12-19 15:30:00', out1_end = '2023-12-28 12:30:00',
-        out2_start = '2024-01-19 19:15:00', out2_end = '2024-01-22 11:00:00'
+        out2_start = '2024-01-19 19:15:00', out2_end = '2024-01-22 11:00:00',
+        aligned    = ALIGNED,
         )
 
 

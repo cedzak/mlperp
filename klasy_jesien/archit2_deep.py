@@ -89,7 +89,11 @@ class DeepArchitecture(BaseArchitecture):
         
         self.d3_kds = kds_setup_instance
         self.dm_type = dm_type
-        self.output_steps = self.d3_kds.datacfg.output_steps
+        # aligned: model musi dać seqlen outputów (jeden na każdą godzinę okna)
+        if self.d3_kds.datacfg.aligned:
+            self.output_steps = self.seqlen
+        else:
+            self.output_steps = self.d3_kds.datacfg.output_steps
 
         self.timestampplus = self.d3_kds.timestampplus
         self.testsetatlast = self.d3_kds.testsetatlast
@@ -264,10 +268,13 @@ class DeepArchitecture(BaseArchitecture):
         return model
 
 
-    def _build_encoder_decoder(self, dmhps):
+    def _build_encoder_decoder(self, dmhps, output_steps=None):
         """Encoder-Decoder nieautoregresyjny: Encoder BiGRU → state → Decoder GRU → Dense.
         Działa dla output_steps=1 i output_steps>1.
+        W aligned mode output_steps=seqlen (ustawiane automatycznie przez self.output_steps).
         """
+        if output_steps is None:
+            output_steps = self.output_steps
         ile_nodow = dmhps.warstwy[2]
 
         # Encoder
@@ -280,7 +287,7 @@ class DeepArchitecture(BaseArchitecture):
         )(inputs)
 
         # Decoder (nieautoregresyjny: state → repeat → GRU → Dense)
-        x = tf.keras.layers.RepeatVector(self.output_steps)(encoder_state)
+        x = tf.keras.layers.RepeatVector(output_steps)(encoder_state)
         x = tf.keras.layers.GRU(
             ile_nodow,
             return_sequences=True,
@@ -291,7 +298,7 @@ class DeepArchitecture(BaseArchitecture):
             tf.keras.layers.Dense(1, activation='linear')
         )(x)
         # reshape do (batch, output_steps)
-        outputs = tf.keras.layers.Reshape((self.output_steps,))(x)
+        outputs = tf.keras.layers.Reshape((output_steps,))(x)
 
         model = tf.keras.Model(inputs, outputs)
         optimizer = tf.keras.optimizers.RMSprop(

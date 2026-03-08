@@ -34,6 +34,10 @@ ISDEEP=True;  ISDUAL=False ## 2 Deep Single
 # ISDEEP=False; ISDUAL=True  ## 3 Shallow Dual
 # ISDEEP=True;  ISDUAL=True  ## 4 Deep Dual
 
+
+ALIGNED = False if ISDEEP==False else True # True: X[i..i+k-1] → y[i..i+k-1]; wymaga ISDEEP=True, SEQLEN=24, DMTYPE='enc_dec' lub 'bigruta_seq2seq'
+
+
 WYBORKOLS = None # 'gdaciep_base_kols' #
 
 CIEPLO = True
@@ -82,7 +86,8 @@ DATACFG_CIEPLO = DataConfig(
         kol_flagA       = 'is_weekend', ######
         intkols_to_scale= [],
         frac_val        = 0.15, ##!!
-        frac_test       = 0.15  ##!!
+        frac_test       = 0.15,  ##!!
+        aligned    = ALIGNED,
         )
 
 DATACFG_TGE = DataConfig(
@@ -91,9 +96,9 @@ DATACFG_TGE = DataConfig(
         kols_map=kols_map_gdatge,
         kol_target      = 'fix_I_pln',
         kol_flagA       = 'is_weekend', ######
-        intkols_to_scale= []
+        intkols_to_scale= [],
+        aligned    = ALIGNED,
         )
-
 
 
 

@@ -29,6 +29,7 @@ class DataConfig:
     frac_test: float = 0.25
     scale: bool = True
     output_steps: int = 1
+    aligned: bool = False  # True: X[i..i+k-1] → y[i..i+k-1] (te same godziny co okno)
 
     # Zakresy czasowe (WYMAGANE tylko dla mr)
     date_start: str = '2000-01-01 00:00:00'

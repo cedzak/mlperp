@@ -155,11 +155,11 @@ class PdsSetup:
     
     
 
-    def add_kol_target(self, df, df_virgin):
+    def add_kol_target(self, df):
         """Przygotowuje kolumnę target i usuwa kol_target z df."""
         df['target'] = df[self.datacfg.kol_target]
         
-        return df.drop(self.datacfg.kol_target, axis=1), df_virgin
+        return df.drop(self.datacfg.kol_target, axis=1)
 
 
 

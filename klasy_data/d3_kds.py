@@ -67,6 +67,7 @@ class KdsSetup:
                             self.d1_pds.data_prep_file,
                             self.testsetatlast,
                             self.datacfg.output_steps,
+                            self.datacfg.aligned,
                             )
         
 

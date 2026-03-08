@@ -413,3 +413,155 @@ nval_mse, val_mae = 53.927, 5.558
 
 Czas robienia: 24.211691 minut
 2026-03-06 23:22:46 - Comm - DEBUG - handle_close[cac345d0194511f1b9af52540011ade1]({'header': {'msg_id': 'b4de0a2c-6c957caef7c5879e18fdbaae_5949_15', 'msg_type': 'comm_close', 'username': 'sylwia', 'session': 'b4de0a2c-6c957caef7c5879e18fdbaae', 'date': datetime.datetime(2026, 3, 6, 22, 22, 46, 131064, tzinfo=tzutc()), 'version': '5.3'}, 'msg_id': 'b4de0a2c-6c957caef7c5879e18fdbaae_5949_15', 'msg_type': 'comm_close', 'parent_header': {}, 'metadata': {}, 'content': {'comm_id': 'cac345d0194511f1b9af52540011ade1', 'data': {}}, 'buffers': []})
+2026-03-08 22:37:41 - klasy_jesien.runner - INFO - 
+
+
+
+
+
+
+
+
+
+######################################################################
+2026-03-08 22:37:41 - klasy_data.d1_pds - INFO - ================================================================================
+2026-03-08 22:37:41 - klasy_data.d1_pds - INFO - Inicjalizacja PdsSetup w PdsSetup
+2026-03-08 22:37:41 - klasy_data.d1_pds - INFO - Wczytuje dane z pliku CSV ../mojecsvy/gdaciep/cieplo_pogoda_czas__sg.csv
+2026-03-08 22:37:41 - klasy_data.d1_pds - ERROR - Błąd w main_main_prepare_scaled_pandas_sets: add_kol_target() missing 1 required positional argument: 'df_virgin'
+2026-03-08 22:37:41 - klasy_data.d1_pds - ERROR - add_kol_target() missing 1 required positional argument: 'df_virgin'
+Traceback (most recent call last):
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 330, in main_main_prepare_scaled_pandas_sets
+    df, df_virgin, qty_train, qty_val, qty_test = self.main1_prepare_df_and_df_virgin()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 196, in main1_prepare_df_and_df_virgin
+    df = self.add_kol_target(df)
+TypeError: add_kol_target() missing 1 required positional argument: 'df_virgin'
+2026-03-08 22:37:41 - klasy_data.d1_pds - CRITICAL - KRYTYCZNY BŁĄD: Błąd w main_main_prepare_scaled_pandas_sets: add_kol_target() missing 1 required positional argument: 'df_virgin'
+2026-03-08 22:37:41 - klasy_jesien.runner - ERROR - 
+
+2026-03-08_22-37 --- BŁĄD PODCZAS LICZENIA
+2026-03-08 22:37:41 - klasy_jesien.runner - ERROR - Błąd: add_kol_target() missing 1 required positional argument: 'df_virgin'
+Traceback (most recent call last):
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_jesien/runner.py", line 159, in run_experiment
+    d3_kds = KdsSetup(
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d3_kds.py", line 45, in __init__
+    self._setup()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d3_kds.py", line 52, in _setup
+    self.d1_pds = PdsSetup(
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 77, in __init__
+    self._setup()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 96, in _setup
+    ) = self.main_main_prepare_scaled_pandas_sets()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 330, in main_main_prepare_scaled_pandas_sets
+    df, df_virgin, qty_train, qty_val, qty_test = self.main1_prepare_df_and_df_virgin()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 196, in main1_prepare_df_and_df_virgin
+    df = self.add_kol_target(df)
+TypeError: add_kol_target() missing 1 required positional argument: 'df_virgin'
+2026-03-08 22:37:41 - klasy_jesien.runner - ERROR - 
+
+Czas do błędu: 0.009192 minut
+2026-03-08 22:38:49 - klasy_jesien.runner - INFO - 
+
+
+
+
+
+
+
+
+
+######################################################################
+2026-03-08 22:38:49 - klasy_data.d1_pds - INFO - ================================================================================
+2026-03-08 22:38:49 - klasy_data.d1_pds - INFO - Inicjalizacja PdsSetup w PdsSetup
+2026-03-08 22:38:49 - klasy_data.d1_pds - INFO - Wczytuje dane z pliku CSV ../mojecsvy/gdaciep/cieplo_pogoda_czas__sg.csv
+2026-03-08 22:38:50 - klasy_data.d1_pds - ERROR - Błąd w main_main_prepare_scaled_pandas_sets: name 'df_virgin' is not defined
+2026-03-08 22:38:50 - klasy_data.d1_pds - ERROR - name 'df_virgin' is not defined
+Traceback (most recent call last):
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 330, in main_main_prepare_scaled_pandas_sets
+    df, df_virgin, qty_train, qty_val, qty_test = self.main1_prepare_df_and_df_virgin()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 196, in main1_prepare_df_and_df_virgin
+    df = self.add_kol_target(df)
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 162, in add_kol_target
+    return df.drop(self.datacfg.kol_target, axis=1), df_virgin
+NameError: name 'df_virgin' is not defined
+2026-03-08 22:38:50 - klasy_data.d1_pds - CRITICAL - KRYTYCZNY BŁĄD: Błąd w main_main_prepare_scaled_pandas_sets: name 'df_virgin' is not defined
+2026-03-08 22:38:50 - klasy_jesien.runner - ERROR - 
+
+2026-03-08_22-38 --- BŁĄD PODCZAS LICZENIA
+2026-03-08 22:38:50 - klasy_jesien.runner - ERROR - Błąd: name 'df_virgin' is not defined
+Traceback (most recent call last):
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_jesien/runner.py", line 159, in run_experiment
+    d3_kds = KdsSetup(
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d3_kds.py", line 45, in __init__
+    self._setup()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d3_kds.py", line 52, in _setup
+    self.d1_pds = PdsSetup(
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 77, in __init__
+    self._setup()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 96, in _setup
+    ) = self.main_main_prepare_scaled_pandas_sets()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 330, in main_main_prepare_scaled_pandas_sets
+    df, df_virgin, qty_train, qty_val, qty_test = self.main1_prepare_df_and_df_virgin()
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 196, in main1_prepare_df_and_df_virgin
+    df = self.add_kol_target(df)
+  File "/home/sylwia/spyder-py3/elektrownia/mlperp/klasy_data/d1_pds.py", line 162, in add_kol_target
+    return df.drop(self.datacfg.kol_target, axis=1), df_virgin
+NameError: name 'df_virgin' is not defined
+2026-03-08 22:38:50 - klasy_jesien.runner - ERROR - 
+
+Czas do błędu: 0.007797 minut
+2026-03-08 22:40:05 - klasy_jesien.runner - INFO - 
+
+
+
+
+
+
+
+
+
+######################################################################
+2026-03-08 22:40:05 - klasy_data.d1_pds - INFO - ================================================================================
+2026-03-08 22:40:05 - klasy_data.d1_pds - INFO - Inicjalizacja PdsSetup w PdsSetup
+2026-03-08 22:40:05 - klasy_data.d1_pds - INFO - Wczytuje dane z pliku CSV ../mojecsvy/gdaciep/cieplo_pogoda_czas__sg.csv
+2026-03-08 22:40:06 - klasy_data.d1_pds - DEBUG - Sorted columns of df: ['cloud_cover', 'cos_day_of_week', 'cos_hour', 'cos_month', 'day_of_week', 'day_of_year', 'diffuse_radiation', 'direct_radiation', 'ghi', 'hour', 'humidity', 'is_weekend', 'lag_168_MW_th', 'lag_1_MW_th', 'lag_24_MW_th', 'lag_2_MW_th', 'lag_48_MW_th', 'month', 'roll_mean_48_MW_th', 'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation', 'roll_mean_48_direct_radiation', 'roll_mean_48_humidity', 'roll_mean_48_t_air', 'roll_mean_48_t_powrotu', 'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m', 'roll_mean_48_wind_speed_10m', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover', 'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation', 'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu', 'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m', 'roll_mean_6_wind_speed_10m', 'sin_day_of_week', 'sin_hour', 'sin_month', 't_air', 't_powrotu', 't_zasilania', 'target', 'wind_speed_100m', 'wind_speed_10m']
+2026-03-08 22:40:06 - klasy_data.d1_pds - INFO - ^^^^^^UWAGA UWAGA, TYLKO KOLUMNY TYPU float ZOSTANA SCALED^^^^^
+2026-03-08 22:40:06 - klasy_data.d1_pds - INFO - Index(['t_air', 't_powrotu', 't_zasilania', 'wind_speed_10m',
+       'wind_speed_100m', 'ghi', 'direct_radiation', 'diffuse_radiation',
+       'sin_hour', 'cos_hour', 'sin_month', 'cos_month', 'sin_day_of_week',
+       'cos_day_of_week', 'roll_mean_6_MW_th', 'roll_mean_6_cloud_cover',
+       'roll_mean_6_diffuse_radiation', 'roll_mean_6_direct_radiation',
+       'roll_mean_6_humidity', 'roll_mean_6_t_air', 'roll_mean_6_t_powrotu',
+       'roll_mean_6_t_zasilania', 'roll_mean_6_wind_speed_100m',
+       'roll_mean_6_wind_speed_10m', 'roll_mean_48_MW_th',
+       'roll_mean_48_cloud_cover', 'roll_mean_48_diffuse_radiation',
+       'roll_mean_48_direct_radiation', 'roll_mean_48_humidity',
+       'roll_mean_48_t_air', 'roll_mean_48_t_powrotu',
+       'roll_mean_48_t_zasilania', 'roll_mean_48_wind_speed_100m',
+       'roll_mean_48_wind_speed_10m', 'lag_1_MW_th', 'lag_2_MW_th',
+       'lag_24_MW_th', 'lag_48_MW_th', 'lag_168_MW_th'],
+      dtype='object')
+2026-03-08 22:40:06 - klasy_data.d1_pds - INFO - ^^^^^^SKALOWANIE POWIODLO SIE^^^^^
+2026-03-08 22:40:06 - klasy_data.d1_pds - INFO - jest 43635 i 43635, len(df) i len(df_for_keras) powinny być sobie równe
+
+2026-03-08 22:40:07 - klasy_jesien.archit2_deep - INFO - 
+
+==================Data Mono==================
+2026-03-08 22:40:07 - klasy_jesien.archit2_deep - INFO - 
+
+=========Run 0=========
+2026-03-08 22:40:13 - h5py._conv - DEBUG - Creating converter from 5 to 3
+2026-03-08 22:40:47 - matplotlib.pyplot - DEBUG - Loaded backend qtagg version 5.15.10.
+2026-03-08 22:40:48 - klasy_jesien.archit2_deep - INFO - Czas treningu dla Run 0: 1 minut 
+nval_mse, val_mae = 67.274, 6.324
+2026-03-08 22:40:48 - klasy_jesien.archit2_deep - INFO - 
+
+=========Run 1=========
+2026-03-08 22:41:13 - klasy_jesien.archit2_deep - INFO - Czas treningu dla Run 1: 0 minut 
+nval_mse, val_mae = 68.446, 6.381
+2026-03-08 22:41:20 - klasy_jesien.handler_dfres - INFO - ✓ Wygenerowano wykresy dla __deep_single__2026-03-08_22-40__bs128_sl24__2runs
+2026-03-08 22:41:20 - klasy_jesien.runner - INFO - 
+
+2026-03-08_22-41 --- SKONCZYL LICZYC
+2026-03-08 22:41:20 - klasy_jesien.runner - INFO - 
+
+Czas robienia: 1.243892 minut
