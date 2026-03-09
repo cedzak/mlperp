@@ -472,19 +472,24 @@ class ShallowArchitecture(BaseArchitecture):
     
     
     
-    def get_feature_importance(self):
+    def get_feature_importance(self, krotka_of_3tvtdatadicts):
         """
-        Zwraca ważność cech (jeśli dostępna).
-        Returns:
-            numpy array lub None
+        Zwraca ważność cech jako DataFrame z kolumnami [feature, importance].
         """
-        print("\n\nget_feature_importance() - to mogą być po prostu coefficients:")
+        (_, val_pdict, _) = krotka_of_3tvtdatadicts
+        feature_names = val_pdict["X_pds"].columns
+
         if hasattr(self.model, 'coef_'):
-            return self.model.coef_.reshape(-1)
+            values = self.model.coef_.reshape(-1)
         elif hasattr(self.model, 'feature_importances_'):
-            return self.model.feature_importances_
+            values = self.model.feature_importances_
         else:
             return None
+
+        return pd.DataFrame({
+            'feature': feature_names,
+            'importance': values
+        }).sort_values(by='importance', ascending=False)
         
         
         

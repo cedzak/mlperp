@@ -98,19 +98,17 @@ class BaseArchitecture(ABC):
                                         t_train_min, t_pred_sec,
                                         val_mse, val_mae, test_mse, test_mae,
                                         used_epochs=None):
-        return locals()
-        ## !! zamiast: 
-        # return {
-        #     'run_idx'  : run_idx,
-        #     'data_name': data_name,
-        #     't_train_min': t_train_min,
-        #     't_pred_sec': t_pred_sec,
-        #     'val_mse' : val_mse,
-        #     'val_mae' : val_mae,
-        #     'test_mse' : test_mse,
-        #     'test_mae' : test_mae
-        #     'used_epochs': used_epochs,
-        #     }
+        return {
+            'run_idx'    : run_idx,
+            'data_name'  : data_name,
+            't_train_min': t_train_min,
+            't_pred_sec' : t_pred_sec,
+            'val_mse'    : val_mse,
+            'val_mae'    : val_mae,
+            'test_mse'   : test_mse,
+            'test_mae'   : test_mae,
+            'used_epochs': used_epochs,
+        }
     
         
     def save_best_run_results_dict(self, metrics_dict):

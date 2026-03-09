@@ -35,6 +35,43 @@ class DeepModelHps:
 
 
 
+
+
+
+wynik_naj_gdaciep_bigruta = DeepModelHps(cfg_id = "naj_gdaciep_bigruta",
+                                initial_learning_rate=0.000629, momentum=0.8, 
+                                dropout=0.4, regl2=0.0001, 
+                                patience_lr=20, patience_es=20, min_delta=0.1, 
+                                warstwy = ["1xGRU", None, 128], # warstwy[1]: kiedyś był tu wybór typu TA (simple_TA, directional_TA...); teraz obsolete bo zawsze używamy Keras MHA
+)
+
+wynik_naj_gdaciep_enc_dec = DeepModelHps(cfg_id = "naj_gdaciep_enc_dec",
+                                initial_learning_rate=0.00261516771201487, momentum=0.5, 
+                                dropout=0.2, regl2=1e-05, 
+                                patience_lr=50, patience_es=80, min_delta=0.5, 
+                                warstwy = ["2xGRU", None, 32], # warstwy[1]: kiedyś był tu wybór typu TA (simple_TA, directional_TA...); teraz obsolete bo zawsze używamy Keras MHA
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 wynik_5020_rezimA = DeepModelHps(cfg_id = "5020A",
                                 initial_learning_rate=0.01, momentum=0.8, 
                                 dropout=0, regl2=0, 

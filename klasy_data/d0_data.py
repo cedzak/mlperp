@@ -29,7 +29,7 @@ class DataConfig:
     frac_test: float = 0.25
     scale: bool = True
     output_steps: int = 1
-    aligned: bool = False  # True: X[i..i+k-1] → y[i..i+k-1] (te same godziny co okno)
+    aligned_krotnosc_24h: bool = False  # True: X[i..i+k-1] → y[i..i+k-1] (te same godziny co okno); seqlen musi być wielokrotnością 24
 
     # Zakresy czasowe (WYMAGANE tylko dla mr)
     date_start: str = '2000-01-01 00:00:00'

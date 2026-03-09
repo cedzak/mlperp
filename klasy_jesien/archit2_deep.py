@@ -61,6 +61,25 @@ from klasy_data.d3_kds import KdsSetup
 from klasy_jesien.ta_warstwy import *
 
 
+class BadTrialStopper(tf.keras.callbacks.Callback):
+    """Zatrzymuje trening jeśli po check_epoch epokach val_loss > loss_threshold.
+    Przydatne dla enc_dec które czasem brnie w złe minimum (val_loss ~928).
+    """
+    def __init__(self, check_epoch=100, loss_threshold=200):
+        super().__init__()
+        self.check_epoch = check_epoch
+        self.loss_threshold = loss_threshold
+
+    def on_epoch_end(self, epoch, logs=None):
+        if epoch + 1 == self.check_epoch:
+            val_loss = logs.get('val_loss', 0)
+            if val_loss > self.loss_threshold:
+                print(f"\nBadTrialStopper: epoch={epoch+1}, " 
+                      f"val_loss={val_loss:.1f} > {self.loss_threshold} → stop"
+                      "\n(możesz zmienić treshhold albo liczbę epok po której stopuje w archit2_deep.py)")
+                self.model.stop_training = True
+
+
 
 class DeepArchitecture(BaseArchitecture):
     """
@@ -70,30 +89,43 @@ class DeepArchitecture(BaseArchitecture):
     A TO KLASĘ ARCHIT WKŁADAM DO KLASY APPROACH A NIE ODWROTNIE.
     """
     
-    def __init__(self, kds_setup_instance: KdsSetup, 
-                       ilerunow: int, 
-                       dm_type: str):
+    def __init__(self, kds_setup_instance: KdsSetup,
+                       ilerunow: int,
+                       dm_type: str,
+                       task: str = "seq2one"):
         """
         Args:
-            dm_type: 'bigruta' dla BiGRU+TA, 'lstm' dla zwykłego LSTM
+            dm_type: 'bigruta' | 'enc_dec' | 'lstm'
+            task:    'seq2one' | 'seq2seq'
         """
         super().__init__(
-            ilerunow=ilerunow,  # Przekazujesz to, co dostałeś jako argument
+            ilerunow=ilerunow,
             timestampplus  =kds_setup_instance.timestampplus,
             batchsize      =kds_setup_instance.batchsize,
             seqlen         =kds_setup_instance.seqlen
             )
-        
-        # NIE POTRZEBUJESZ: self.ilerunow = ilerunow
-        # Bo klasa bazowa już to zrobiła!
-        
+
         self.d3_kds = kds_setup_instance
         self.dm_type = dm_type
-        # aligned: model musi dać seqlen outputów (jeden na każdą godzinę okna)
-        if self.d3_kds.datacfg.aligned:
+        self.task = task
+
+        # Walidacje
+        if task == "seq2seq":
+            assert dm_type in ("bigruta", "enc_dec"), (
+                f"task='seq2seq' wymaga dm_type 'bigruta' lub 'enc_dec', podano: '{dm_type}'"
+            )
+        if self.d3_kds.datacfg.aligned_krotnosc_24h:
+            assert task == "seq2seq", (
+                f"aligned_krotnosc_24h=True wymaga task='seq2seq', podano: '{task}'"
+            )
+
+        # output_steps
+        if self.d3_kds.datacfg.aligned_krotnosc_24h:
             self.output_steps = self.seqlen
-        else:
+        elif task == "seq2seq":
             self.output_steps = self.d3_kds.datacfg.output_steps
+        else:
+            self.output_steps = 1
 
         self.timestampplus = self.d3_kds.timestampplus
         self.testsetatlast = self.d3_kds.testsetatlast
@@ -153,12 +185,12 @@ class DeepArchitecture(BaseArchitecture):
         """
         if self.dm_type == 'lstm':
             self.model = self._build_zwykly_lstm(dmhps)
-        elif self.dm_type == 'bigruta_seq2seq':
-            self.model = self._build_gru_attention(dmhps, output_steps=self.output_steps)
         elif self.dm_type == 'enc_dec':
             self.model = self._build_encoder_decoder(dmhps, output_steps=self.output_steps)
-        else:  # 'bigruta' (default)
-            self.model = self._build_gru_attention(dmhps)
+        elif self.dm_type == 'bigruta':
+            self.model = self._build_gru_attention(dmhps, output_steps=self.output_steps)
+        else:
+            raise ValueError(f"Nieznany dm_type: '{self.dm_type}'. Dozwolone: 'bigruta', 'enc_dec', 'lstm'")
 
         return self.model
     
@@ -197,7 +229,7 @@ class DeepArchitecture(BaseArchitecture):
     
     def _build_gru_attention(self, dmhps, output_steps=1):
         """GRU + Attention - z oryginalnego define_and_compile_mdeep.
-        output_steps=1: seq2one; output_steps>1: seq2seq Dense (bigruta_seq2seq)
+        task='seq2one': output_steps=1; task='seq2seq': output_steps>1
         """
         variant_gru, variant_ta, variant_ile_nodow = dmhps.warstwy
         pol_nodow = int(variant_ile_nodow / 2)
@@ -235,16 +267,11 @@ class DeepArchitecture(BaseArchitecture):
 
         x = tf.keras.layers.Dropout(dmhps.dropout)(x)
 
-        # Warstwa Attention
-        return_seq = False
-        if variant_ta == "simple_TA":
-            x = TimeAttention(return_sequences=return_seq)(x)
-        elif variant_ta == "directional_TA":
-            x = DirectionalTimeAttention(return_sequences=return_seq)(x)
-        elif variant_ta == "long_directional_TA":
-            x = LongDirectionalTimeAttention(return_sequences=return_seq)(x)
-        else:
-            raise ValueError(f"Invalid variant_ta: {variant_ta}")
+        # Warstwa Attention (Keras MultiHeadAttention)
+        x = tf.keras.layers.MultiHeadAttention(
+            num_heads=4, key_dim=max(1, variant_ile_nodow // 4)
+        )(x, x)
+        x = tf.keras.layers.GlobalAveragePooling1D()(x)
 
         # ***************
         outputs = tf.keras.layers.Dense(
@@ -269,7 +296,9 @@ class DeepArchitecture(BaseArchitecture):
 
 
     def _build_encoder_decoder(self, dmhps, output_steps=None):
-        """Encoder-Decoder nieautoregresyjny: Encoder BiGRU → state → Decoder GRU → Dense.
+        """Encoder-Decoder: GRU encoder → MultiHeadAttention → RepeatVector → GRU decoder → Dense.
+        Encoder zwraca pełną sekwencję + stan końcowy; attention wybiera co ważne z sekwencji;
+        dekoder startuje ze stanem encodera (initial_state) i dostaje repeated context.
         Działa dla output_steps=1 i output_steps>1.
         W aligned mode output_steps=seqlen (ustawiane automatycznie przez self.output_steps).
         """
@@ -277,22 +306,34 @@ class DeepArchitecture(BaseArchitecture):
             output_steps = self.output_steps
         ile_nodow = dmhps.warstwy[2]
 
-        # Encoder
         inputs = tf.keras.Input(shape=self.input_shape)
-        _, encoder_state = tf.keras.layers.GRU(
-            ile_nodow,
-            return_sequences=False,
-            return_state=True,
-            kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
-        )(inputs)
 
-        # Decoder (nieautoregresyjny: state → repeat → GRU → Dense)
-        x = tf.keras.layers.RepeatVector(output_steps)(encoder_state)
+        # Encoder: GRU → pełna sekwencja ukrytych stanów
+        encoder_out = tf.keras.layers.GRU(
+            ile_nodow,
+            return_sequences=True,
+            kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
+        )(inputs)  # (batch, seqlen, ile_nodow)
+
+        # Attention na sekwencji encodera → wektor kontekstu
+        attn_out = tf.keras.layers.MultiHeadAttention(
+            num_heads=4, key_dim=max(1, ile_nodow // 4)
+        )(encoder_out, encoder_out)
+        encoder_ctx = tf.keras.layers.GlobalAveragePooling1D()(attn_out)  # (batch, ile_nodow)
+
+        # Encoder state (last timestep) jako dodatkowe "zasilenie" dekodera
+        encoder_last = tf.keras.layers.Lambda(lambda t: t[:, -1, :])(encoder_out)  # (batch, ile_nodow)
+
+        # Połącz context + last state → jeden wektor wejściowy do dekodera
+        decoder_seed = tf.keras.layers.Add()([encoder_ctx, encoder_last])  # (batch, ile_nodow)
+
+        # Decoder: repeated seed → GRU → prognozy
+        x = tf.keras.layers.RepeatVector(output_steps)(decoder_seed)
         x = tf.keras.layers.GRU(
             ile_nodow,
             return_sequences=True,
             kernel_regularizer=tf.keras.regularizers.l2(dmhps.regl2)
-        )(x, initial_state=encoder_state)
+        )(x)
         x = tf.keras.layers.Dropout(dmhps.dropout)(x)
         x = tf.keras.layers.TimeDistributed(
             tf.keras.layers.Dense(1, activation='linear')
@@ -314,21 +355,26 @@ class DeepArchitecture(BaseArchitecture):
     
 
     def stworz_callbacks(self, run_str_id, dmhps):
-                
-        return [
+
+        callbacks = [
             tf.keras.callbacks.ModelCheckpoint(
                 str(self.sciezka_play / f"model_{run_str_id}.keras"), save_best_only=True
             ),
-            tf.keras.callbacks.EarlyStopping(monitor="val_loss", mode="min", 
-                                             patience=dmhps.patience_es, 
-                                             min_delta=dmhps.min_delta, 
+            tf.keras.callbacks.EarlyStopping(monitor="val_loss", mode="min",
+                                             patience=dmhps.patience_es,
+                                             min_delta=dmhps.min_delta,
                                              restore_best_weights=True, verbose=1),
-            tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.8, 
+            tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.8,
                                                  patience=dmhps.patience_lr,
                                                  min_lr=0.00001, verbose=1),
-            DebugCallback(),  # <- TO JEST instancja (obiekt stworzony z klasy)
+            DebugCallback(),
             GradientCallback()
-            ]
+        ]
+
+        if self.dm_type == 'enc_dec':
+            callbacks.append(BadTrialStopper(check_epoch=100, loss_threshold=200))
+
+        return callbacks
 
 
     

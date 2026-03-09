@@ -10,11 +10,13 @@ import time; from datetime import datetime
 from pathlib import Path
 import numpy as np; import pandas as pd
 import matplotlib.pyplot as plt; import seaborn as sns
+import tensorflow as tf
 
 logger = logging.getLogger(__name__)
 
 pd.set_option("display.float_format", lambda x: "%.2f" % x)
 pd.options.mode.chained_assignment = None  # wyłącza SettingWithCopyWarning (specyficzne warningi pandas)
+pd.options.display.max_columns = 10
 
 # warnings.filterwarnings("ignore", category=UserWarning)
 # warnings.filterwarnings("ignore", category=FutureWarning)
@@ -25,16 +27,14 @@ plt.style.use("seaborn-v0_8-poster")
 print(plt.rcParams["figure.facecolor"])  # powinno być 'white'
 print(plt.rcParams["axes.titlesize"])    # powinna być np. 18.0 (duża czcionka)
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 import subprocess
 def playsound(path): #### bo to lepsze niż biblioteka playsound
     try:
         subprocess.run(['aplay', path], check=True, capture_output=True)
     except Exception:
         print(f"(Nie można odtworzyć dźwięku: {path})")
-import tensorflow as tf
-pd.options.display.max_columns = 10
-#
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 from klasy_data.d1_pds import PdsSetup
 from klasy_data.d3_kds import KdsSetup
 from klasy_jesien.archit1_shallow import ShallowArchitecture
@@ -43,14 +43,27 @@ from klasy_jesien.behav1_single import SingleBehavior
 from klasy_jesien.behav2_dual import DualBehavior
 from klasy_jesien.handler_dfres import DfResHandler
 
-def setup_logging():
-    """Konfiguracja loggera"""
-    logging.basicConfig(
-        level=logging.DEBUG,
-        filename='zz_project_log.log',
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+def setup_logging(log_file='zz_adam_run.log'):
+    """Konfiguracja loggera — pisze jednocześnie do pliku i na konsolę."""
+    fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    datefmt = '%Y-%m-%d %H:%M:%S'
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    root.handlers.clear()  # unikamy duplikatów przy ponownym wywołaniu
+
+    # plik
+    fh = logging.FileHandler(log_file, encoding='utf-8')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(logging.Formatter(fmt, datefmt))
+    root.addHandler(fh)
+
+    # konsola
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)  # na konsolę tylko INFO+, żeby nie zaśmiecać
+    ch.setFormatter(logging.Formatter(fmt, datefmt))
+    root.addHandler(ch)
+
     logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
     return logging.getLogger(__name__)
 
@@ -79,7 +92,8 @@ def run_experiment(
     ilerunow=1,
     smtype="rfr",
     dmtype="bigruta",
-    
+    task="seq2one",
+
     # Parametry deep model (None dla shallow)
     epochs=None,
     batchsize=None,
@@ -141,6 +155,8 @@ def run_experiment(
     # Setup
     logger = setup_logging()
     setup_gpu()
+    # - setup_logging() — konfiguruje logger Pythona (poziom INFO, format z timestampem) żeby komunikaty z tunera ładnie lądowały w logu zamiast jako surowy print                   
+    # - setup_gpu() — konfiguruje TensorFlow żeby nie zajmowało od razu całej pamięci GPU (memory_growth=True), tylko przydzielało ją stopniowo w miarę potrzeb            
     start_time = time.time()
     
     try:
@@ -166,7 +182,7 @@ def run_experiment(
                 sprkod=sprkod,
                 testsetatlast=testsetatlast
             )
-            archit = DeepArchitecture(d3_kds, ilerunow, dmtype)
+            archit = DeepArchitecture(d3_kds, ilerunow, dmtype, task)
             
             if isdual: ## Deep Dual
                 if dmhps_rezimA is None or dmhps_rezimB is None:
@@ -201,7 +217,7 @@ def run_experiment(
                 results_for_dfres = behav.run_runs_and_get_results_for_dfres()
                 
                 # tylko tu można to zrobić, ale dual nie zakodowane
-                print(archit.get_feature_importance())
+                print(archit.get_feature_importance(behav.data_for_tvt))
                 print(archit.get_permut_importance(behav.data_for_tvt))
             
             sciezka_play = d1_pds.k1_path

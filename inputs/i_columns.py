@@ -7,6 +7,42 @@ Created on Thu Oct 23 19:06:57 2025; @author: sylwia
 kols_map_gdatge = None
 
 #### cols :: gdaciep
+
+top8_gdaciep_kols_feat_importance = [
+    "lag_1_MW_th",
+    "roll_mean_6_MW_th",
+    "lag_2_MW_th",
+    "t_air",
+    "roll_mean_6_t_air",
+    "t_zasilania",
+    "lag_24_MW_th",
+    "roll_mean_48_MW_th",
+] + ['MW_th', 'is_weekend']
+
+top10_gdaciep_kols_permut_importance = [
+    "lag_1_MW_th",
+    "roll_mean_6_MW_th",
+    "t_zasilania",
+    "lag_2_MW_th",
+    "t_air",
+    "roll_mean_48_MW_th",
+    "lag_24_MW_th",
+    "roll_mean_48_t_air",
+    "ghi",
+    "lag_48_MW_th",
+] + ['MW_th', 'is_weekend']
+
+
+# `dict.fromkeys()` usuwa duplikaty zachowując kolejność (od Pythona 3.7+)
+# `dict.fromkeys()` tworzy słownik gdzie klucze to elementy listy, a wartości to `None` !!!
+# Ale zaraz owijamy to w `list()`, więc wyciągamy tylko klucze — i dostajemy czystą listę bez duplikatów. Trochę hacky trick, ale powszechnie używany.
+nowosc = dict.fromkeys(top8_gdaciep_kols_feat_importance + top10_gdaciep_kols_permut_importance)
+top_gdaciep_kols = list(nowosc)
+
+
+
+
+
 gdaciep_base_kols = [
     'MW_th',
     'cloud_cover',
@@ -69,6 +105,9 @@ gdaciep_roll_kols = [
 
 
 kols_map_gdaciep = {
+    'top_gdaciep_kols':     top_gdaciep_kols,
+    'top8_gdaciep_kols_feat_importance':    top8_gdaciep_kols_feat_importance,
+    'top10_gdaciep_kols_permut_importance': top10_gdaciep_kols_permut_importance,
     'gdaciep_base_kols':                   gdaciep_base_kols,
     'gdaciep_base_sincos_kols':            gdaciep_base_kols + gdaciep_sincos_kols,
     'gdaciep_base_sincos_lagtar_kols':     gdaciep_base_kols + gdaciep_sincos_kols + gdaciep_lagtar_kols,

@@ -101,7 +101,7 @@ tuner = DeepModelTuner(
     epochs=200,
     batchsize=128,
     seqlen=72,
-    dmtype="bigruta",
+    dmtype="bigruta_seq2one",  # stary przykład - używaj 'bigruta' + task='seq2one'
     ilerunow_per_trial=3,
     max_trials=50,
     tuner_strategy="bayesian"
@@ -194,7 +194,7 @@ PARAMETRY NIE-TUNOWANE (stałe):
 - epochs: Liczba epok treningowych (np. 200-500)
 - batchsize: Rozmiar batcha (np. 128)
 - seqlen: Długość sekwencji (np. 72)
-- dmtype: Typ modelu ("bigruta" lub "lstm")
+- dmtype: Typ modelu ("bigruta" | "enc_dec" | "lstm"), task: "seq2one" | "seq2seq"
 
 
 PARAMETRY TUNINGU:
@@ -411,10 +411,10 @@ CONFIG_QUICK_TEST = {
     'epochs': 50,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'bigruta'
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
-# Konfiguracja standardowa (4-8h)
 CONFIG_STANDARD = {
     'tuner_strategy': 'bayesian',
     'max_trials': 30,
@@ -422,10 +422,10 @@ CONFIG_STANDARD = {
     'epochs': 200,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'bigruta'
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
-# Konfiguracja na noc (8-12h) - REKOMENDOWANA! ⭐
 CONFIG_OVERNIGHT = {
     'tuner_strategy': 'bayesian',
     'max_trials': 60,
@@ -433,10 +433,10 @@ CONFIG_OVERNIGHT = {
     'epochs': 250,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'bigruta'
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
-# Konfiguracja intensywna (24-48h)
 CONFIG_INTENSIVE = {
     'tuner_strategy': 'bayesian',
     'max_trials': 100,
@@ -444,10 +444,10 @@ CONFIG_INTENSIVE = {
     'epochs': 300,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'bigruta'
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
-# Konfiguracja dla LSTM (4-8h)
 CONFIG_LSTM = {
     'tuner_strategy': 'bayesian',
     'max_trials': 50,
@@ -455,10 +455,10 @@ CONFIG_LSTM = {
     'epochs': 200,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'lstm'
+    'dmtype': 'lstm',
+    'task': 'seq2one',
 }
 
-# Konfiguracja Hyperband - szybkie przeszukiwanie (8-16h)
 CONFIG_HYPERBAND = {
     'tuner_strategy': 'hyperband',
     'max_trials': 200,
@@ -466,29 +466,30 @@ CONFIG_HYPERBAND = {
     'epochs': 500,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'bigruta'
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
-# Konfiguracja konserwatywna - mało pamięci GPU (4-8h)
 CONFIG_LOW_MEMORY = {
     'tuner_strategy': 'bayesian',
     'max_trials': 40,
     'ilerunow_per_trial': 3,
     'epochs': 200,
-    'batchsize': 64,    # ← mniejszy batch
-    'seqlen': 48,       # ← krótsza sekwencja
-    'dmtype': 'bigruta'
+    'batchsize': 64,
+    'seqlen': 48,
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
-# Konfiguracja eksploracyjna - poznaj przestrzeń (2-4h)
 CONFIG_EXPLORATION = {
     'tuner_strategy': 'random',
-    'max_trials': 50,
-    'ilerunow_per_trial': 1,  # szybko, bez uśredniania
+    'max_trials': 20,
+    'ilerunow_per_trial': 1,
     'epochs': 150,
     'batchsize': 128,
     'seqlen': 72,
-    'dmtype': 'bigruta'
+    'dmtype': 'bigruta',
+    'task': 'seq2one',
 }
 
 

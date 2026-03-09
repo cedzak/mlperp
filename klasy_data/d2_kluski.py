@@ -31,19 +31,19 @@ class KluskiConfig:
                  data_prep_file,
                  testsetatlast=False,
                  output_steps=1,
-                 aligned=False):
+                 aligned_krotnosc_24h=False):
         """Konfiguracja i tworzenie datasetów z sekwencjami czasowymi.
         NIKT TEGO NIE WIE CZY TEN KOD CIĄGLE DZIAŁA BEZ ZARZUTU GDYBY sequence_stride != 1
 
-        aligned=True: X[i..i+k-1] → y[i..i+k-1] (te same godziny co okno).
+        aligned_krotnosc_24h=True: X[i..i+k-1] → y[i..i+k-1] (te same godziny co okno).
         Okna nie nakładają się (stride=seqlen) i startują od pierwszej północy w danych.
-        Wymaga seqlen=24 (24 godziny = jedna doba).
-        aligned=False: stare zachowanie (X[i..i+k-1] → y[i+k], delay=seqlen).
+        Wymaga danych godzinowych i seqlen będącego wielokrotnością 24.
+        aligned_krotnosc_24h=False: stare zachowanie (X[i..i+k-1] → y[i+k], delay=seqlen).
         """
         self.testsetatlast = testsetatlast
         self.data_prep_file = data_prep_file
         self.output_steps = output_steps
-        self.aligned = aligned
+        self.aligned_krotnosc_24h = aligned_krotnosc_24h
 
         self.epochs = epochs
         self.batchsize = batchsize
@@ -56,11 +56,18 @@ class KluskiConfig:
         self.X_for_keras = np.round(df_for_keras.drop('target', axis=1).values, 3)
         y_1d = np.round(df_for_keras['target'].values, 3)
 
-        if aligned:
+        if aligned_krotnosc_24h:
             # ============================================================
             # ALIGNED MODE: X[i..i+k-1] → y[i..i+k-1]
-            # Okna nie nakładają się (stride=seqlen=24), startują od północy.
+            # Okna nie nakładają się (stride=seqlen), startują od północy.
             # ============================================================
+            assert seqlen % 24 == 0, (
+                f"aligned_krotnosc_24h wymaga seqlen będącego wielokrotnością 24, podano: {seqlen}"
+            )
+            median_diff = pd.Series(df_for_keras.index).diff().dropna().dt.total_seconds().median()
+            assert median_diff == 3600, (
+                f"aligned_krotnosc_24h wymaga danych godzinowych (mediana różnic = 3600s), wykryto: {median_diff}s"
+            )
             self.delay = 0
             self.sequence_stride = seqlen  # non-overlapping
 
@@ -125,7 +132,7 @@ class KluskiConfig:
             self.sequence_stride = 1
             self.delay = self.sampling_rate * self.seqlen
             # self.delay = self.sampling_rate * (self.seqlen +k) # gdzie k ile chcesz przeskoczyć
-            # Czyli delay powinien być wielokrotnością sampling_rate (czy seqlen) żeby y lądowało na tej samej siatce czasowej co okno. Inaczej trafiasz między próbki.
+            # Czyli delay powinien być wielokrotnością sampling_rate (czy seqlen??) żeby y lądowało na tej samej siatce czasowej co okno. Inaczej trafiasz między próbki.
             #
             # Czy delay zależy od seqlen i sampling_rate?
             # Parametrycznie — nie, delay to osobna liczba. Ale semantycznie — tak,
@@ -146,10 +153,6 @@ class KluskiConfig:
         }
 
 
-        # chyba tu nie ma co, bo nie są używane:
-        # (self.train_kdict, 
-        #  self.val_kdict, 
-        #  self.test_kdict)    
 
 
     
@@ -234,7 +237,7 @@ class KluskiConfig:
         """
         # self.nauka__idx_defaultowy_liczony_jest_od_zera()
 
-        if self.aligned:
+        if self.aligned_krotnosc_24h:
             return self._wyczaruj_datasets_aligned(train_kdict, val_kdict, test_kdict)
 
         train_kds = tf.keras.utils.timeseries_dataset_from_array(
@@ -302,7 +305,7 @@ class KluskiConfig:
 
         first_ywiersz_liczonyod0 = last_ywiersz_liczonyod0 -ilosc_kluskow +1 # słupki w płocie
 
-        if self.aligned:
+        if self.aligned_krotnosc_24h:
             # first/last są INDEKSAMI OKIEN; każde okno zajmuje seqlen wierszy.
             # Wiersz startowy okna w_idx = midnight_offset + w_idx * seqlen
             row_start = self.midnight_offset + first_ywiersz_liczonyod0 * self.seqlen

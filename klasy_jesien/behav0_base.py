@@ -113,6 +113,35 @@ class BaseBehavior(ABC):
     
 
     
+    def _log_po_tasowaniu(self, kds, label, y_indices, n_samples, y_actuals_before):
+        """Loguje info o przetasowanym train kds do data_prep_file.
+        y_actuals_before: y w oryginalnej kolejności (1D flat array).
+        Porównuje jabłka z jabłkami: w seq2seq reshape do okien, w seq2one skalary.
+        """
+        data_prep_file = self.d3_kds.d2_kluski.data_prep_file
+        y_batch = next(iter(kds))[1].numpy()  # (batch, seqlen) dla seq2seq, (batch,) dla seq2one
+
+        if y_batch.ndim > 1:
+            # seq2seq / aligned: każda próbka to okno — pokaż 3 całe okna
+            seqlen = y_batch.shape[1]
+            y_przed = y_actuals_before[:3 * seqlen].reshape(3, seqlen)
+            y_po    = y_batch[:3]
+        else:
+            # seq2one: każda próbka to skalar
+            y_przed = y_actuals_before[:3]
+            y_po    = y_batch[:3]
+
+        with open(data_prep_file, "a") as f:
+            f.write(
+                f"\n{'---' * 15}\n"
+                f"[SHUFFLE] {label}\n"
+                f"  n_samples: {n_samples}\n"
+                f"  y_indices zakres: {y_indices[0]} .. {y_indices[-1]}\n"
+                f"  pierwsze 3 y PRZED tasowaniem: {y_przed}\n"
+                f"  pierwsze 3 y PO  tasowaniu:    {y_po}\n"
+                f"{'---' * 15}\n"
+            )
+
     # Bez @abstractmethod = MOŻESZ nadpisać → dla metod opcjonalnych
     def sklej_predykcje_indeksami(self, *args, **kwargs):
         """

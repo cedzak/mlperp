@@ -121,8 +121,19 @@ class DualBehavior(BaseBehavior):
                                             self.train_kdict['y_indices'], 
                                             self.train_kdict['y_actuals'], 
                                             shuffle=True)
+        if train_kdictA["kds"] is not None:
+            self._log_po_tasowaniu(train_kdictA["kds"], "Dual trainA",
+                                   train_kdictA["y_indices"],
+                                   int(train_maskA_dla_kluskow.sum()),
+                                   train_kdictA["y_actuals"])
+        if train_kdictB["kds"] is not None:
+            self._log_po_tasowaniu(train_kdictB["kds"], "Dual trainB",
+                                   train_kdictB["y_indices"],
+                                   int((~train_maskA_dla_kluskow).sum()),
+                                   train_kdictB["y_actuals"])
+
         # Val
-        (val_kdictA, val_kdictB, 
+        (val_kdictA, val_kdictB,
          val_maskA_dla_kluskow
          ) = self.d3_kds.d2_kluski.rozdziel_kluski_na_rezimy_A_i_B(
                                             self.val_kdict['kds'], 
@@ -177,7 +188,6 @@ class DualBehavior(BaseBehavior):
             self.data_for_tvt = self._prepare_2AB_krotki_of_3tvt_kdicts()
 
         else:
-            pass # shallow is not ready yet
             self.data_for_tvt = self._prepare_2AB_krotki_of_3tvt_pdicts()
         
         return self.data_for_tvt

@@ -9,8 +9,6 @@ import json
 import logging
 from pathlib import Path
 from datetime import datetime
-from playsound import playsound
-
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -18,12 +16,25 @@ import keras_tuner as kt
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+logger = logging.getLogger(__name__)
+
+# ustawienia plots:
+plt.style.use("seaborn-v0_8-poster")
+print(plt.rcParams["figure.facecolor"])  # powinno być 'white'
+print(plt.rcParams["axes.titlesize"])    # powinna być np. 18.0 (duża czcionka)
+
+import subprocess
+def playsound(path): #### bo to lepsze niż biblioteka playsound
+    try:
+        subprocess.run(['aplay', path], check=True, capture_output=True)
+    except Exception:
+        print(f"(Nie można odtworzyć dźwięku: {path})")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 from klasy_data.d0_data import DataConfig
 from klasy_data.d3_kds import KdsSetup
-from klasy_jesien.archit2_deep import DeepArchitecture
+from klasy_jesien.archit2_deep import DeepArchitecture, BadTrialStopper
 from klasy_jesien.behav1_single import SingleBehavior
-
-logger = logging.getLogger(__name__)
 
 
 class DeepModelTuner:
@@ -47,6 +58,7 @@ class DeepModelTuner:
         batchsize: int = 128,
         seqlen: int = 72,
         dmtype: str = "bigruta",
+        task: str = "seq2one",
         
         # Parametry tuningu
         ilerunow_per_trial: int = 3,  # Ile runów na każdą konfigurację
@@ -73,7 +85,8 @@ class DeepModelTuner:
             epochs: Liczba epok treningowych
             batchsize: Rozmiar batcha
             seqlen: Długość sekwencji
-            dmtype: Typ modelu deep ("bigruta" lub "lstm")
+            dmtype: Typ modelu deep ("bigruta" | "enc_dec" | "lstm")
+            task:   Zadanie ("seq2one" | "seq2seq")
             ilerunow_per_trial: Ile runów wykonać dla każdej konfiguracji (uśredniamy RMSE)
             max_trials: Maksymalna liczba prób (konfiguracji hiperparametrów)
             executions_per_trial: Wewnętrzny parametr Keras Tuner (zostaw 1)
@@ -90,6 +103,7 @@ class DeepModelTuner:
         self.batchsize = batchsize
         self.seqlen = seqlen
         self.dmtype = dmtype
+        self.task = task
         
         self.ilerunow_per_trial = ilerunow_per_trial
         self.max_trials = max_trials
@@ -105,7 +119,7 @@ class DeepModelTuner:
         # Setup directories
         if tuner_dir is None:
             base_dir = Path(datacfg.mojerys_path).parent
-            self.tuner_dir = base_dir / "mojerys" / datacfg.projekt_akronim / f"tuner_{timestampplus}"
+            self.tuner_dir = base_dir / "hp_tuner" / datacfg.projekt_akronim / f"{timestampplus}"
         else:
             self.tuner_dir = Path(tuner_dir)
         
@@ -165,12 +179,12 @@ class DeepModelTuner:
         Returns:
             Compiled Keras model
         """
-        # Zbuduj model używając architektury
         # Tworzymy tymczasową instancję DeepArchitecture tylko dla budowy modelu
         archit = DeepArchitecture(
             kds_setup_instance=self.d3_kds,
-            ilerunow=1,  # Nie ma znaczenia dla build()
-            dm_type=self.dmtype
+            ilerunow=1,
+            dm_type=self.dmtype,
+            task=self.task
         )
         
         # Definiuj przestrzeń hiperparametrów
@@ -231,49 +245,26 @@ class DeepModelTuner:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Architektura warstw
         
-        if self.dmtype == "bigruta":
-            # Typ GRU
+        if self.dmtype in ("bigruta", "enc_dec"):
             variant_gru = hp.Choice(
                 'variant_gru',
                 values=["1xGRU", "2xGRU"],
                 default="1xGRU"
             )
-            
-            # Typ Temporal Attention
-            variant_ta = hp.Choice(
-                'variant_ta',
-                values=["simple_TA", "directional_TA"],
-                default="simple_TA"
-            )
-            
-            # Liczba jednostek
             variant_ile_nodow = hp.Choice(
                 'variant_ile_nodow',
                 values=[32, 64, 128, 256],
                 default=64
             )
-            
-            warstwy = [variant_gru, variant_ta, variant_ile_nodow]
-            
+            warstwy = [variant_gru, None, variant_ile_nodow]  # warstwy[1]: kiedyś był tu wybór typu TA (simple_TA, directional_TA...); teraz obsolete bo zawsze używamy Keras MHA
+
         else:  # lstm
-            # Typ LSTM (na razie tylko jeden)
-            variant_lstm = "lstm"
-            
-            # Duplikacja (czy 2 warstwy LSTM)
-            variant_duplicate = hp.Choice(
-                'variant_duplicate',
-                values=["lstm", "lstm"],  # Placeholder - możesz rozszerzyć
-                default="lstm"
-            )
-            
-            # Liczba jednostek
             variant_ile_nodow = hp.Choice(
                 'variant_ile_nodow',
                 values=[16, 32, 64, 128],
                 default=32
             )
-            
-            warstwy = [variant_lstm, variant_duplicate, variant_ile_nodow]
+            warstwy = ["lstm", "lstm", variant_ile_nodow]
         
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Stwórz obiekt DeepModelHps z wytunowanymi parametrami
@@ -318,18 +309,10 @@ class DeepModelTuner:
         # Przygotuj hiperparametry
         from inputs.i_mdeep_hps import DeepModelHps
         
-        if self.dmtype == "bigruta":
-            warstwy = [
-                hp.get('variant_gru'),
-                hp.get('variant_ta'),
-                hp.get('variant_ile_nodow')
-            ]
+        if self.dmtype in ("bigruta", "enc_dec"):
+            warstwy = [hp.get('variant_gru'), None, hp.get('variant_ile_nodow')]  # warstwy[1]: obsolete, kiedyś typ TA
         else:
-            warstwy = [
-                "lstm",
-                hp.get('variant_duplicate'),
-                hp.get('variant_ile_nodow')
-            ]
+            warstwy = ["lstm", "lstm", hp.get('variant_ile_nodow')]
         
         dmhps = DeepModelHps(
             cfg_id=f"tuner_trial",
@@ -356,7 +339,8 @@ class DeepModelTuner:
             archit = DeepArchitecture(
                 kds_setup_instance=self.d3_kds,
                 ilerunow=1,
-                dm_type=self.dmtype
+                dm_type=self.dmtype,
+                task=self.task
             )
             model = archit.build(dmhps)
             
@@ -366,6 +350,7 @@ class DeepModelTuner:
                 dmhps=dmhps,
                 val_kds=self.val_kds
             )
+            callbacks_list.append(BadTrialStopper(check_epoch=100, loss_threshold=200))
             
             # Trenuj
             history = model.fit(
@@ -537,10 +522,10 @@ class DeepModelTuner:
             f.write(f"# Strategy: {self.tuner_strategy}\n\n")
             f.write("from inputs.i_mdeep_hps import DeepModelHps\n\n")
             
-            if self.dmtype == "bigruta":
-                warstwy_str = f'["{best_hps_dict["variant_gru"]}", "{best_hps_dict["variant_ta"]}", {best_hps_dict["variant_ile_nodow"]}]'
+            if self.dmtype in ("bigruta", "enc_dec"):
+                warstwy_str = f'["{best_hps_dict["variant_gru"]}", None, {best_hps_dict["variant_ile_nodow"]}]'  # warstwy[1]: obsolete, kiedyś typ TA
             else:
-                warstwy_str = f'["lstm", "{best_hps_dict["variant_duplicate"]}", {best_hps_dict["variant_ile_nodow"]}]'
+                warstwy_str = f'["lstm", "lstm", {best_hps_dict["variant_ile_nodow"]}]'
             
             f.write(f"best_hps_tuned = DeepModelHps(\n")
             f.write(f"    cfg_id='tuned_{self.timestampplus}',\n")
@@ -609,7 +594,7 @@ class DeepModelTuner:
     
     def _plot_score_progression(self, df_results):
         """Wykres postępu tuningu"""
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(18, 10))
         
         plt.subplot(1, 2, 1)
         plt.plot(df_results['trial_id'], df_results['score'], 
@@ -640,8 +625,9 @@ class DeepModelTuner:
         """Wykres znaczenia hiperparametrów"""
         # Wybierz tylko kolumny numeryczne (hiperparametry)
         numeric_cols = df_results.select_dtypes(include=[np.number]).columns.tolist()
-        numeric_cols.remove('trial_id')
-        numeric_cols.remove('score')
+        for col in ['trial_id', 'score']:
+            if col in numeric_cols:
+                numeric_cols.remove(col)
         
         if len(numeric_cols) == 0:
             return
@@ -693,26 +679,7 @@ class DeepModelTuner:
         logger.info(f"Zapisano podsumowanie do: {summary_file}")
 
 
-def setup_logging():
-    """Konfiguracja loggera głównego"""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
-
-
-def setup_gpu():
-    """Konfiguracja GPU"""
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        try:
-            for gpu in gpus:
-                tf.config.experimental.set_memory_growth(gpu, True)
-            logger.info(f"GPU dostępne: {len(gpus)}")
-        except RuntimeError as e:
-            logger.error(f"Błąd konfiguracji GPU: {e}")
+from klasy_jesien.runner import setup_logging, setup_gpu  # jedna definicja dla obu
 
 
 # =============================================================================
@@ -742,18 +709,19 @@ if __name__ == "__main__":
     # Timestamp
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
     timestampplus = f"tuner_bigruta_{timestamp}"
-    
+
     # Stwórz tuner
     tuner = DeepModelTuner(
         datacfg=datacfg,
         wyborkols="gda_deepheat_bezsincos",
         timestampplus=timestampplus,
-        epochs=200,  # Krócej dla tuningu
+        epochs=200,
         batchsize=128,
         seqlen=72,
         dmtype="bigruta",
-        ilerunow_per_trial=3,  # 3 runy na trial
-        max_trials=50,         # 50 prób
+        task="seq2one",
+        ilerunow_per_trial=3,
+        max_trials=50,
         tuner_strategy="bayesian",
         sprkod=False,
         testsetatlast=False

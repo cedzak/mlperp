@@ -44,8 +44,14 @@ class SingleBehavior(BaseBehavior):
 
         train_kdict = {k: v for k, v in self.train_kdict.items() 
                if k in keys_to_keep}
-        train_kdict["kds"]= train_kdict["kds"].shuffle( 
+        train_kdict["kds"] = train_kdict["kds"].shuffle(
                                 buffer_size=self.train_kdict["ilosc_kluskow"])
+        self._log_po_tasowaniu(train_kdict["kds"], "Mono train",
+                               train_kdict["y_indices"],
+                               self.train_kdict["ilosc_kluskow"],
+                               train_kdict["y_actuals"])
+        
+        
         val_kdict = {k: v for k, v in self.val_kdict.items() 
                if k in keys_to_keep}
         test_kdict = {k: v for k, v in self.test_kdict.items() 
